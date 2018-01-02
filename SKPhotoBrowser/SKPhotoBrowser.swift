@@ -393,10 +393,15 @@ internal extension SKPhotoBrowser {
     
     func getImageFromView(_ sender: UIView) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(sender.frame.size, true, 0.0)
-        sender.layer.render(in: UIGraphicsGetCurrentContext()!)
-        let result = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        return result!
+        if let context = UIGraphicsGetCurrentContext() {
+            sender.layer.render(in: context)
+            let result = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+            return result ?? UIImage()
+        } else {
+            UIGraphicsEndImageContext()
+            return UIImage()
+        }
     }
 }
 
