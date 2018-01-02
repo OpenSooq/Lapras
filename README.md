@@ -1,4 +1,4 @@
-SKPhotoBrowser
+Lapras: SKPhotoBrowser
 ========================
 
 ![Swift](http://img.shields.io/badge/swift-4.0-brightgreen.svg)
