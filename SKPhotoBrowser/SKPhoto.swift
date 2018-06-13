@@ -13,6 +13,7 @@ import UIKit
     var caption: String! { get }
     var index: Int { get set}
     var contentMode: UIViewContentMode { get set }
+    var is360: Bool { get set }
     func loadUnderlyingImageAndNotify()
     func checkCache()
 }
@@ -26,7 +27,8 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
     open var shouldCachePhotoURLImage: Bool = false
     open var caption: String!
     open var index: Int = 0
-
+    open var is360: Bool = false
+    
     override init() {
         super.init()
     }

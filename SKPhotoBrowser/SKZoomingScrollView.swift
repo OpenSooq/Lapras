@@ -7,19 +7,393 @@
 //
 
 import UIKit
+import SceneKit
+import CoreMotion
+import ImageIO
+
+public protocol CTPanoramaCompass {
+    func updateUI(rotationAngle: CGFloat, fieldOfViewAngle: CGFloat)
+}
+
+public enum CTPanoramaControlMethod: Int {
+    case motion
+    case touch
+}
+
+public enum CTPanoramaType: Int {
+    case cylindrical
+    case spherical
+}
+
+open class CTPanoramaView: UIView {
+    
+    // MARK: Public properties
+    
+    public var panSpeed = CGPoint(x: 0.005, y: 0.005)
+    
+    public var image: UIImage? {
+        didSet {
+            panoramaType = panoramaTypeForCurrentImage
+        }
+    }
+    
+    public var overlayView: UIView? {
+        didSet {
+            replace(overlayView: oldValue, with: overlayView)
+        }
+    }
+    
+    public var panoramaType: CTPanoramaType = .cylindrical {
+        didSet {
+            createGeometryNode()
+            resetCameraAngles()
+        }
+    }
+    
+    public var controlMethod: CTPanoramaControlMethod = .touch {
+        didSet {
+            switchControlMethod(to: controlMethod)
+            resetCameraAngles()
+        }
+    }
+    
+    public var compass: CTPanoramaCompass?
+    public var movementHandler: ((_ rotationAngle: CGFloat, _ fieldOfViewAngle: CGFloat) -> Void)?
+    
+    // MARK: Private properties
+    
+    private let radius: CGFloat = 10
+    private let sceneView = SCNView()
+    private let scene = SCNScene()
+    private let motionManager = CMMotionManager()
+    private var geometryNode: SCNNode?
+    private var prevLocation = CGPoint.zero
+    private var prevBounds = CGRect.zero
+    
+    private lazy var cameraNode: SCNNode = {
+        let node = SCNNode()
+        let camera = SCNCamera()
+        node.camera = camera
+        return node
+    }()
+    
+    private lazy var opQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.qualityOfService = .userInteractive
+        return queue
+    }()
+    
+    private lazy var fovHeight: CGFloat = {
+        return tan(self.yFov/2 * .pi / 180.0) * 2 * self.radius
+    }()
+    
+    private var xFov: CGFloat {
+        return yFov * self.bounds.width / self.bounds.height
+    }
+    
+    private var yFov: CGFloat {
+        get {
+            if #available(iOS 11.0, *) {
+                return cameraNode.camera?.fieldOfView ?? 0
+            } else {
+                return CGFloat(cameraNode.camera?.yFov ?? 0)
+            }
+        }
+        set {
+            if #available(iOS 11.0, *) {
+                cameraNode.camera?.fieldOfView = newValue
+            } else {
+                cameraNode.camera?.yFov = Double(newValue)
+            }
+        }
+    }
+    
+    private var panoramaTypeForCurrentImage: CTPanoramaType {
+        if let image = image {
+            if image.size.width / image.size.height == 2 {
+                return .spherical
+            }
+        }
+        return .cylindrical
+    }
+    
+    // MARK: Class lifecycle methods
+    
+    public required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        commonInit()
+    }
+    
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonInit()
+    }
+    
+    public convenience init(frame: CGRect, image: UIImage) {
+        self.init(frame: frame)
+        // Force Swift to call the property observer by calling the setter from a non-init context
+        ({ self.image = image })()
+    }
+    
+    deinit {
+        if motionManager.isDeviceMotionActive {
+            motionManager.stopDeviceMotionUpdates()
+        }
+    }
+    
+    private func commonInit() {
+        add(view: sceneView)
+        
+        scene.rootNode.addChildNode(cameraNode)
+        yFov = 70
+        
+        sceneView.scene = scene
+        sceneView.backgroundColor = UIColor.black
+        
+        switchControlMethod(to: controlMethod)
+    }
+    
+    // MARK: Configuration helper methods
+    
+    private func createGeometryNode() {
+        guard let image = image else {return}
+        
+        geometryNode?.removeFromParentNode()
+        
+        let material = SCNMaterial()
+        material.diffuse.contents = image
+        material.diffuse.mipFilter = .nearest
+        material.diffuse.magnificationFilter = .nearest
+        material.diffuse.contentsTransform = SCNMatrix4MakeScale(-1, 1, 1)
+        material.diffuse.wrapS = .repeat
+        material.cullMode = .front
+        
+        if panoramaType == .spherical {
+            let sphere = SCNSphere(radius: radius)
+            sphere.segmentCount = 300
+            sphere.firstMaterial = material
+            
+            let sphereNode = SCNNode()
+            sphereNode.geometry = sphere
+            geometryNode = sphereNode
+        } else {
+            let tube = SCNTube(innerRadius: radius, outerRadius: radius, height: fovHeight)
+            tube.heightSegmentCount = 50
+            tube.radialSegmentCount = 300
+            tube.firstMaterial = material
+            
+            let tubeNode = SCNNode()
+            tubeNode.geometry = tube
+            geometryNode = tubeNode
+        }
+        scene.rootNode.addChildNode(geometryNode!)
+    }
+    
+    private func replace(overlayView: UIView?, with newOverlayView: UIView?) {
+        overlayView?.removeFromSuperview()
+        guard let newOverlayView = newOverlayView else {return}
+        add(view: newOverlayView)
+    }
+    
+    private func switchControlMethod(to method: CTPanoramaControlMethod) {
+        sceneView.gestureRecognizers?.removeAll()
+        
+        if method == .touch {
+            let panGestureRec = UIPanGestureRecognizer(target: self, action: #selector(handlePan(panRec:)))
+            sceneView.addGestureRecognizer(panGestureRec)
+            
+            if motionManager.isDeviceMotionActive {
+                motionManager.stopDeviceMotionUpdates()
+            }
+        } else {
+            guard motionManager.isDeviceMotionAvailable else {return}
+            motionManager.deviceMotionUpdateInterval = 0.015
+            motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: opQueue,
+                                                   withHandler: { [weak self] (motionData, error) in
+                                                    guard let panoramaView = self else {return}
+                                                    guard panoramaView.controlMethod == .motion else {return}
+                                                    
+                                                    guard let motionData = motionData else {
+                                                        print("\(String(describing: error?.localizedDescription))")
+                                                        panoramaView.motionManager.stopDeviceMotionUpdates()
+                                                        return
+                                                    }
+                                                    
+                                                    let rotationMatrix = motionData.attitude.rotationMatrix
+                                                    var userHeading = .pi - atan2(rotationMatrix.m32, rotationMatrix.m31)
+                                                    userHeading += .pi/2
+                                                    
+                                                    DispatchQueue.main.async {
+                                                        if panoramaView.panoramaType == .cylindrical {
+                                                            // Prevent vertical movement in a cylindrical panorama
+                                                            panoramaView.cameraNode.eulerAngles = SCNVector3Make(0, Float(-userHeading), 0)
+                                                        } else {
+                                                            // Use quaternions when in spherical mode to prevent gimbal lock
+                                                            panoramaView.cameraNode.orientation = motionData.orientation()
+                                                        }
+                                                        panoramaView.reportMovement(CGFloat(userHeading), panoramaView.xFov.toRadians())
+                                                    }
+            })
+        }
+    }
+    
+    private func resetCameraAngles() {
+        cameraNode.eulerAngles = SCNVector3Make(0, 0, 0)
+        self.reportMovement(0, xFov.toRadians(), callHandler: false)
+    }
+    
+    private func reportMovement(_ rotationAngle: CGFloat, _ fieldOfViewAngle: CGFloat, callHandler: Bool = true) {
+        compass?.updateUI(rotationAngle: rotationAngle, fieldOfViewAngle: fieldOfViewAngle)
+        if callHandler {
+            movementHandler?(rotationAngle, fieldOfViewAngle)
+        }
+    }
+    
+    // MARK: Gesture handling
+    
+    @objc private func handlePan(panRec: UIPanGestureRecognizer) {
+        if panRec.state == .began {
+            prevLocation = CGPoint.zero
+        } else if panRec.state == .changed {
+            var modifiedPanSpeed = panSpeed
+            
+            if panoramaType == .cylindrical {
+                modifiedPanSpeed.y = 0 // Prevent vertical movement in a cylindrical panorama
+            }
+            
+            let location = panRec.translation(in: sceneView)
+            let orientation = cameraNode.eulerAngles
+            var newOrientation = SCNVector3Make(orientation.x + Float(location.y - prevLocation.y) * Float(modifiedPanSpeed.y),
+                                                orientation.y + Float(location.x - prevLocation.x) * Float(modifiedPanSpeed.x),
+                                                orientation.z)
+            
+            if controlMethod == .touch {
+                newOrientation.x = max(min(newOrientation.x, 1.1), -1.1)
+            }
+            
+            cameraNode.eulerAngles = newOrientation
+            prevLocation = location
+            
+            reportMovement(CGFloat(-cameraNode.eulerAngles.y), xFov.toRadians())
+        }
+    }
+    
+    open override func layoutSubviews() {
+        super.layoutSubviews()
+        if bounds.size.width != prevBounds.size.width || bounds.size.height != prevBounds.size.height {
+            sceneView.setNeedsDisplay()
+            reportMovement(CGFloat(-cameraNode.eulerAngles.y), xFov.toRadians(), callHandler: false)
+        }
+    }
+}
+
+fileprivate extension CMDeviceMotion {
+    
+    func orientation() -> SCNVector4 {
+        
+        let attitude = self.attitude.quaternion
+        let attitudeQuanternion = GLKQuaternion(quanternion: attitude)
+        
+        let result: SCNVector4
+        
+        switch UIApplication.shared.statusBarOrientation {
+            
+        case .landscapeRight:
+            let cq1 = GLKQuaternionMakeWithAngleAndAxis(.pi/2, 0, 1, 0)
+            let cq2 = GLKQuaternionMakeWithAngleAndAxis(-(.pi/2), 1, 0, 0)
+            var quanternionMultiplier = GLKQuaternionMultiply(cq1, attitudeQuanternion)
+            quanternionMultiplier = GLKQuaternionMultiply(cq2, quanternionMultiplier)
+            
+            result = quanternionMultiplier.vector(for: .landscapeRight)
+            
+        case .landscapeLeft:
+            let cq1 = GLKQuaternionMakeWithAngleAndAxis(-(.pi/2), 0, 1, 0)
+            let cq2 = GLKQuaternionMakeWithAngleAndAxis(-(.pi/2), 1, 0, 0)
+            var quanternionMultiplier = GLKQuaternionMultiply(cq1, attitudeQuanternion)
+            quanternionMultiplier = GLKQuaternionMultiply(cq2, quanternionMultiplier)
+            
+            result = quanternionMultiplier.vector(for: .landscapeLeft)
+            
+        case .portraitUpsideDown:
+            let cq1 = GLKQuaternionMakeWithAngleAndAxis(-(.pi/2), 1, 0, 0)
+            let cq2 = GLKQuaternionMakeWithAngleAndAxis(.pi, 0, 0, 1)
+            var quanternionMultiplier = GLKQuaternionMultiply(cq1, attitudeQuanternion)
+            quanternionMultiplier = GLKQuaternionMultiply(cq2, quanternionMultiplier)
+            
+            result = quanternionMultiplier.vector(for: .portraitUpsideDown)
+            
+        case .unknown, .portrait:
+            let clockwiseQuanternion = GLKQuaternionMakeWithAngleAndAxis(-(.pi/2), 1, 0, 0)
+            let quanternionMultiplier = GLKQuaternionMultiply(clockwiseQuanternion, attitudeQuanternion)
+            
+            result = quanternionMultiplier.vector(for: .portrait)
+        }
+        return result
+    }
+}
+
+fileprivate extension UIView {
+    func add(view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(view)
+        let views = ["view": view]
+        let hConstraints = NSLayoutConstraint.constraints(withVisualFormat: "|[view]|", options: [], metrics: nil, views: views)    //swiftlint:disable:this line_length
+        let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:|[view]|", options: [], metrics: nil, views: views)  //swiftlint:disable:this line_length
+        self.addConstraints(hConstraints)
+        self.addConstraints(vConstraints)
+    }
+}
+
+fileprivate extension FloatingPoint {
+    func toDegrees() -> Self {
+        return self * 180 / .pi
+    }
+    
+    func toRadians() -> Self {
+        return self * .pi / 180
+    }
+}
+
+private extension GLKQuaternion {
+    init(quanternion: CMQuaternion) {
+        self.init(q: (Float(quanternion.x), Float(quanternion.y), Float(quanternion.z), Float(quanternion.w)))
+    }
+    
+    func vector(for orientation: UIInterfaceOrientation) -> SCNVector4 {
+        switch orientation {
+        case .landscapeRight:
+            return SCNVector4(x: -self.y, y: self.x, z: self.z, w: self.w)
+            
+        case .landscapeLeft:
+            return SCNVector4(x: self.y, y: -self.x, z: self.z, w: self.w)
+            
+        case .portraitUpsideDown:
+            return SCNVector4(x: -self.x, y: -self.y, z: self.z, w: self.w)
+            
+        case .unknown, .portrait:
+            return SCNVector4(x: self.x, y: self.y, z: self.z, w: self.w)
+        }
+    }
+}
 
 open class SKZoomingScrollView: UIScrollView {
     var captionView: SKCaptionView!
     var photo: SKPhotoProtocol! {
         didSet {
-            photoImageView.image = nil
+            if let imageView = photoImageView as? UIImageView {
+                imageView.image = nil
+            }
+            if let panoramaView = photoImageView as? CTPanoramaView {
+                panoramaView.image = nil
+            }
             if photo != nil {
+                setupImageView()
                 displayImage(complete: false)
             }
         }
     }
     
-    fileprivate(set) var photoImageView: SKDetectingImageView!
+    fileprivate(set) var photoImageView: UIView!
     fileprivate weak var photoBrowser: SKPhotoBrowser?
     fileprivate var tapView: SKDetectingView!
     fileprivate var indicatorView: SKIndicatorView!
@@ -51,14 +425,7 @@ open class SKZoomingScrollView: UIScrollView {
         tapView.backgroundColor = UIColor.clear
         tapView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         addSubview(tapView)
-        
-        // image
-        photoImageView = SKDetectingImageView(frame: frame)
-        photoImageView.delegate = self
-        photoImageView.contentMode = .bottom
-        photoImageView.backgroundColor = UIColor.clear
-        addSubview(photoImageView)
-        
+
         // indicator
         indicatorView = SKIndicatorView(frame: frame)
         addSubview(indicatorView)
@@ -72,6 +439,30 @@ open class SKZoomingScrollView: UIScrollView {
         autoresizingMask = [.flexibleWidth, .flexibleTopMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleLeftMargin]
     }
     
+    func setupImageView() {
+        if photo.is360 {
+            if let _ = photoImageView as? CTPanoramaView {
+                return
+            }
+            photoImageView?.removeFromSuperview()
+            photoImageView = CTPanoramaView(frame: .zero)
+            photoImageView.contentMode = .bottom
+            photoImageView.backgroundColor = UIColor.clear
+            insertSubview(photoImageView, belowSubview: indicatorView)
+        } else {
+            if let _ = photoImageView as? UIImageView {
+                return
+            }
+            photoImageView?.removeFromSuperview()
+            let detectingImageView = SKDetectingImageView(frame: .zero)
+            detectingImageView.delegate = self
+            photoImageView = detectingImageView
+            photoImageView.contentMode = .bottom
+            photoImageView.backgroundColor = UIColor.clear
+            insertSubview(photoImageView, belowSubview: indicatorView)
+        }
+    }
+    
     // MARK: - override
     
     open override func layoutSubviews() {
@@ -81,6 +472,14 @@ open class SKZoomingScrollView: UIScrollView {
         super.layoutSubviews()
         
         let boundsSize = bounds.size
+        
+        if photo.is360 {
+            if !photoImageView.frame.equalTo(bounds) {
+                photoImageView.frame = bounds
+            }
+            return
+        }
+        
         var frameToCenter = photoImageView.frame
         
         // horizon
@@ -103,6 +502,7 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     open func setMaxMinZoomScalesForCurrentBounds() {
+        
         maximumZoomScale = 1
         minimumZoomScale = 1
         zoomScale = 1
@@ -198,7 +598,12 @@ open class SKZoomingScrollView: UIScrollView {
             // UIGraphicsEndImageContext();
 
             // image
-            photoImageView.image = image
+            if let imageView = photoImageView as? UIImageView {
+                imageView.image = image
+            }
+            if let panoramaView = photoImageView as? CTPanoramaView {
+                panoramaView.image = image
+            }
             photoImageView.contentMode = photo.contentMode
             photoImageView.backgroundColor = SKPhotoBrowserOptions.backgroundColor
             
