@@ -238,7 +238,7 @@ open class CTPanoramaView: UIView {
     }
     
     private func resetCameraAngles() {
-        cameraNode.eulerAngles = SCNVector3Make(0, 0, 0)
+        cameraNode.eulerAngles = SCNVector3Make(0, Float(Double.pi), 0)
         self.reportMovement(0, xFov.toRadians(), callHandler: false)
     }
     
