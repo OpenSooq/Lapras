@@ -124,13 +124,13 @@ open class CTPanoramaView: UIView {
         commonInit()
     }
     
-    public override init(frame: CGRect) {
+    public init(frame: CGRect, fieldOfView: CGFloat) {
         super.init(frame: frame)
-        commonInit()
+        commonInit(fieldOfView)
     }
     
-    public convenience init(frame: CGRect, image: UIImage) {
-        self.init(frame: frame)
+    public convenience init(frame: CGRect, image: UIImage, fieldOfView: CGFloat) {
+        self.init(frame: frame, fieldOfView: fieldOfView)
         // Force Swift to call the property observer by calling the setter from a non-init context
         ({ self.image = image })()
     }
@@ -141,11 +141,11 @@ open class CTPanoramaView: UIView {
         }
     }
     
-    private func commonInit() {
+    private func commonInit(_ fieldOfView: CGFloat = 70) {
         add(view: sceneView)
         
         scene.rootNode.addChildNode(cameraNode)
-        yFov = 70
+        yFov = fieldOfView
         
         sceneView.scene = scene
         sceneView.backgroundColor = UIColor.black
@@ -445,7 +445,7 @@ open class SKZoomingScrollView: UIScrollView {
                 return
             }
             photoImageView?.removeFromSuperview()
-            photoImageView = CTPanoramaView(frame: .zero)
+            photoImageView = CTPanoramaView(frame: .zero, fieldOfView: SKPhotoBrowserOptions.yFov)
             photoImageView.contentMode = .bottom
             photoImageView.backgroundColor = UIColor.clear
             insertSubview(photoImageView, belowSubview: indicatorView)

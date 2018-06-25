@@ -37,6 +37,8 @@ public struct SKPhotoBrowserOptions {
     public static var toolbarFont = UIFont(name: "Helvetica", size: 16.0)
     public static var captionFont = UIFont.systemFont(ofSize: 17.0)
     
+    public static var yFov = CGFloat(70)
+    
     // FIXED: Scrolling performance slowed #145
     // public static var imagePaddingX: CGFloat = 0
     // public static var imagePaddingY: CGFloat = 0
