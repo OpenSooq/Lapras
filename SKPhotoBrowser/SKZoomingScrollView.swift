@@ -148,9 +148,11 @@ open class CTPanoramaView: UIView {
         yFov = fieldOfView
         
         sceneView.scene = scene
-        sceneView.backgroundColor = UIColor.black
+        sceneView.backgroundColor = UIColor.clear
         
         switchControlMethod(to: controlMethod)
+        
+        resetCameraAngles()
     }
     
     // MARK: Configuration helper methods
@@ -441,18 +443,12 @@ open class SKZoomingScrollView: UIScrollView {
     
     func setupImageView() {
         if photo.is360 {
-            if let _ = photoImageView as? CTPanoramaView {
-                return
-            }
             photoImageView?.removeFromSuperview()
-            photoImageView = CTPanoramaView(frame: .zero, fieldOfView: SKPhotoBrowserOptions.yFov)
+            photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
             photoImageView.contentMode = .bottom
             photoImageView.backgroundColor = UIColor.clear
             insertSubview(photoImageView, belowSubview: indicatorView)
         } else {
-            if let _ = photoImageView as? UIImageView {
-                return
-            }
             photoImageView?.removeFromSuperview()
             let detectingImageView = SKDetectingImageView(frame: .zero)
             detectingImageView.delegate = self
@@ -475,7 +471,7 @@ open class SKZoomingScrollView: UIScrollView {
         
         if photo.is360 {
             if !photoImageView.frame.equalTo(bounds) {
-                photoImageView.frame = bounds
+                photoImageView.frame = CGRect(x: 0, y: 0, width: bounds.size.width, height: bounds.size.height)
             }
             return
         }
@@ -502,6 +498,10 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     open func setMaxMinZoomScalesForCurrentBounds() {
+        
+        if photo.is360 {
+            return
+        }
         
         maximumZoomScale = 1
         minimumZoomScale = 1
@@ -613,9 +613,16 @@ open class SKZoomingScrollView: UIScrollView {
             
             photoImageView.frame = photoImageViewFrame
             
-            contentSize = photoImageViewFrame.size
-            
-            setMaxMinZoomScalesForCurrentBounds()
+            if let panoramaView = photoImageView as? CTPanoramaView {
+                contentSize = self.frame.size
+                maximumZoomScale = 1
+                minimumZoomScale = 1
+                zoomScale = 1
+            }
+            if let imageView = photoImageView as? UIImageView {
+                contentSize = photoImageViewFrame.size
+                setMaxMinZoomScalesForCurrentBounds()
+            }
         }
         setNeedsLayout()
     }
@@ -658,6 +665,7 @@ extension SKZoomingScrollView: UIScrollViewDelegate {
     }
     
     public func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
+        scrollView.pinchGestureRecognizer?.isEnabled = !photo.is360
         photoBrowser?.cancelControlHiding()
     }
     
