@@ -109,6 +109,7 @@ open class CTPanoramaView: UIView {
     }
     
     private var panoramaTypeForCurrentImage: CTPanoramaType {
+
         if let image = image {
             if image.size.width / image.size.height == 2 {
                 return .spherical
@@ -203,6 +204,7 @@ open class CTPanoramaView: UIView {
         if method == .touch {
             let panGestureRec = UIPanGestureRecognizer(target: self, action: #selector(handlePan(panRec:)))
             sceneView.addGestureRecognizer(panGestureRec)
+            sceneView.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(panRec:))))
             
             if motionManager.isDeviceMotionActive {
                 motionManager.stopDeviceMotionUpdates()
@@ -252,6 +254,21 @@ open class CTPanoramaView: UIView {
     }
     
     // MARK: Gesture handling
+    
+    var lastScale: CGFloat = 0
+
+    @objc private func handlePinch(panRec: UIPinchGestureRecognizer) {
+        
+        if panRec.state == .began {
+            lastScale = panRec.scale
+        } else if panRec.state == .changed {
+            let ds = lastScale - panRec.scale
+            yFov = yFov + ds * 20
+            lastScale = panRec.scale
+        }
+        
+        yFov = min(max(yFov, 70), 125)
+    }
     
     @objc private func handlePan(panRec: UIPanGestureRecognizer) {
         if panRec.state == .began {
