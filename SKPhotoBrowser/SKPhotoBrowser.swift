@@ -405,10 +405,10 @@ internal extension SKPhotoBrowser {
     }
 }
 
-// MARK: - Internal Function For Frame Calc
-
-internal extension SKPhotoBrowser {
-    func frameForToolbarAtOrientation() -> CGRect {
+// MARK: - Functions For Frame Calc
+extension SKPhotoBrowser {
+    
+    open func frameForToolbarAtOrientation() -> CGRect {
         let currentOrientation = UIApplication.shared.statusBarOrientation
         var height: CGFloat = navigationController?.navigationBar.frame.size.height ?? 44
         if UIInterfaceOrientationIsLandscape(currentOrientation) {
@@ -417,7 +417,7 @@ internal extension SKPhotoBrowser {
         return CGRect(x: 0, y: view.bounds.size.height - height, width: view.bounds.size.width, height: height)
     }
     
-    func frameForToolbarHideAtOrientation() -> CGRect {
+    open func frameForToolbarHideAtOrientation() -> CGRect {
         let currentOrientation = UIApplication.shared.statusBarOrientation
         var height: CGFloat = navigationController?.navigationBar.frame.size.height ?? 44
         if UIInterfaceOrientationIsLandscape(currentOrientation) {
@@ -426,7 +426,7 @@ internal extension SKPhotoBrowser {
         return CGRect(x: 0, y: view.bounds.size.height + height, width: view.bounds.size.width, height: height)
     }
     
-    func frameForPageAtIndex(_ index: Int) -> CGRect {
+    open func frameForPageAtIndex(_ index: Int) -> CGRect {
         let bounds = pagingScrollView.bounds
         var pageFrame = bounds
         pageFrame.size.width -= (2 * 10)
