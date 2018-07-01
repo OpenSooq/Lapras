@@ -460,12 +460,18 @@ open class SKZoomingScrollView: UIScrollView {
     
     func setupImageView() {
         if photo.is360 {
+            if photoImageView is CTPanoramaView {
+                return
+            }
             photoImageView?.removeFromSuperview()
             photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
             photoImageView.contentMode = .bottom
             photoImageView.backgroundColor = UIColor.clear
             insertSubview(photoImageView, belowSubview: indicatorView)
         } else {
+            if photoImageView is SKDetectingImageView {
+                return
+            }
             photoImageView?.removeFromSuperview()
             let detectingImageView = SKDetectingImageView(frame: .zero)
             detectingImageView.delegate = self

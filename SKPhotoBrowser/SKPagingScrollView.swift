@@ -76,10 +76,12 @@ class SKPagingScrollView: UIScrollView {
     }
     
     func animate(_ frame: CGRect) {
-        setContentOffset(CGPoint(x: frame.origin.x - sideMargin, y: 0), animated: true)
+        DispatchQueue.main.async {
+            self.setContentOffset(CGPoint(x: frame.origin.x - self.sideMargin, y: 0), animated: true)
+        }
     }
     
-    func updateFrame(_ bounds: CGRect, currentPageIndex: Int) {
+    func updateFrame(_ bounds: CGRect, currentPageIndex: Int, updateOffset: Bool = true) {
         var frame = bounds
         frame.origin.x -= sideMargin
         frame.size.width += (2 * sideMargin)
@@ -98,7 +100,10 @@ class SKPagingScrollView: UIScrollView {
         }
         
         updateContentSize()
-        updateContentOffset(currentPageIndex)
+        
+        if updateOffset {
+            updateContentOffset(currentPageIndex)
+        }
     }
     
     func updateContentSize() {

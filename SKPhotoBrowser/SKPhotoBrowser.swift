@@ -139,7 +139,7 @@ open class SKPhotoBrowser: UIViewController {
         
         closeButton.updateFrame()
         deleteButton.updateFrame()
-        pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex)
+        pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex, updateOffset: false)
         
         toolbar.frame = frameForToolbarAtOrientation()
         
@@ -283,7 +283,11 @@ public extension SKPhotoBrowser {
             let pageFrame = frameForPageAtIndex(index)
             pagingScrollView.animate(pageFrame)
         }
-        hideControlsAfterDelay()
+        if photos[index].is360 == false {
+            hideControlsAfterDelay()
+        } else {
+            cancelControlHiding()
+        }
     }
     
     func photoAtIndex(_ index: Int) -> SKPhotoProtocol {
@@ -661,9 +665,17 @@ extension SKPhotoBrowser: UIScrollViewDelegate {
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        hideControlsAfterDelay()
         
         let currentIndex = pagingScrollView.contentOffset.x / pagingScrollView.frame.size.width
+        let currentIndexInt = Int(ceil(currentIndex))
+        
+        if currentIndexInt < photos.count, photos[currentIndexInt].is360 == true {
+            cancelControlHiding()
+            setControlsHidden(false, animated: false, permanent: true)
+        } else {
+            hideControlsAfterDelay()
+        }
+        
         delegate?.didScrollToIndex?(Int(currentIndex))
     }
     
