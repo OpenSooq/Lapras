@@ -146,10 +146,12 @@ open class CTPanoramaView: UIView {
         add(view: sceneView)
         
         scene.rootNode.addChildNode(cameraNode)
+        scene.background.contents = UIColor.black
+        
         yFov = fieldOfView
         
         sceneView.scene = scene
-        sceneView.backgroundColor = UIColor.clear
+        sceneView.backgroundColor = UIColor.black
         
         switchControlMethod(to: controlMethod)
         
@@ -466,7 +468,7 @@ open class SKZoomingScrollView: UIScrollView {
             photoImageView?.removeFromSuperview()
             photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
             photoImageView.contentMode = .bottom
-            photoImageView.backgroundColor = UIColor.clear
+            photoImageView.backgroundColor = UIColor.black
             insertSubview(photoImageView, belowSubview: indicatorView)
         } else {
             if photoImageView is SKDetectingImageView {
@@ -477,7 +479,7 @@ open class SKZoomingScrollView: UIScrollView {
             detectingImageView.delegate = self
             photoImageView = detectingImageView
             photoImageView.contentMode = .bottom
-            photoImageView.backgroundColor = UIColor.clear
+            photoImageView.backgroundColor = UIColor.black
             insertSubview(photoImageView, belowSubview: indicatorView)
         }
     }
