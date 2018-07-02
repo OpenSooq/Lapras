@@ -139,7 +139,8 @@ open class SKPhotoBrowser: UIViewController {
         
         closeButton.updateFrame()
         deleteButton.updateFrame()
-        pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex, updateOffset: false)
+        
+        //pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex, updateOffset: false)
         
         toolbar.frame = frameForToolbarAtOrientation()
         
