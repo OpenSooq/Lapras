@@ -109,7 +109,6 @@ open class CTPanoramaView: UIView {
     }
     
     private var panoramaTypeForCurrentImage: CTPanoramaType {
-
         if let image = image {
             if image.size.width / image.size.height == 2 {
                 return .spherical
@@ -145,8 +144,10 @@ open class CTPanoramaView: UIView {
     private func commonInit(_ fieldOfView: CGFloat = 70) {
         add(view: sceneView)
         
+        self.backgroundColor = UIColor.black
+        
         scene.rootNode.addChildNode(cameraNode)
-        scene.background.contents = UIColor.black
+        scene.background.contents = UIColor.clear
         
         yFov = fieldOfView
         
@@ -156,21 +157,26 @@ open class CTPanoramaView: UIView {
         switchControlMethod(to: controlMethod)
         
         resetCameraAngles()
+        
+        sceneView.prepare([scene], completionHandler: nil)
     }
     
     // MARK: Configuration helper methods
     
     private func createGeometryNode() {
-        guard let image = image else {return}
         
+        guard let image = image else {return}
+
         geometryNode?.removeFromParentNode()
         
         let material = SCNMaterial()
+        
         material.diffuse.contents = image
         material.diffuse.mipFilter = .nearest
         material.diffuse.magnificationFilter = .nearest
         material.diffuse.contentsTransform = SCNMatrix4MakeScale(-1, 1, 1)
         material.diffuse.wrapS = .repeat
+        
         material.cullMode = .front
         
         if panoramaType == .spherical {
@@ -452,7 +458,7 @@ open class SKZoomingScrollView: UIScrollView {
         addSubview(indicatorView)
         
         // self
-        backgroundColor = UIColor.clear
+        backgroundColor = UIColor.black
         delegate = self
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
