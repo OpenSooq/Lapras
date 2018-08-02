@@ -132,6 +132,8 @@ open class SKPhotoBrowser: UIViewController {
             i = i + 1
         }
     }
+   
+    var lastOrientation: UIInterfaceOrientation?
     
     override open func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
@@ -140,7 +142,11 @@ open class SKPhotoBrowser: UIViewController {
         closeButton.updateFrame()
         deleteButton.updateFrame()
         
-        //pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex, updateOffset: false)
+        let currentOrientation = UIApplication.shared.statusBarOrientation
+        if let lastOrientationFound = lastOrientation, lastOrientationFound != currentOrientation {
+            pagingScrollView.updateFrame(view.bounds, currentPageIndex: currentPageIndex, updateOffset: true)
+        }
+        lastOrientation = currentOrientation
         
         toolbar.frame = frameForToolbarAtOrientation()
         
