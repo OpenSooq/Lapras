@@ -528,6 +528,16 @@ open class SKZoomingScrollView: UIScrollView {
         }
     }
     
+    func imageViewHasImageSet() -> Bool {
+        if let panoramaView = photoImageView as? CTPanoramaView {
+            return panoramaView.image != nil
+        }
+        if let imageView = photoImageView as? UIImageView {
+            return imageView.image != nil
+        }
+        return false
+    }
+    
     open func setMaxMinZoomScalesForCurrentBounds() {
         
         if photo.is360 {
@@ -536,7 +546,10 @@ open class SKZoomingScrollView: UIScrollView {
         
         maximumZoomScale = 1
         minimumZoomScale = 1
-        zoomScale = 1
+        
+        if imageViewHasImageSet() {
+            zoomScale = 1
+        }
         
         guard let photoImageView = photoImageView else {
             return
@@ -568,9 +581,14 @@ open class SKZoomingScrollView: UIScrollView {
             maxScale = 2.5
         }
     
+        photoImageView.frame = CGRect(x: 0, y: 0, width: photoImageView.frame.size.width, height: photoImageView.frame.size.height)
+        
         maximumZoomScale = maxScale
         minimumZoomScale = minScale
-        zoomScale = minScale
+        
+        if imageViewHasImageSet() {
+            zoomScale = minScale
+        }
         
         // on high resolution screens we have double the pixel density, so we will be seeing every pixel if we limit the
         // maximum zoom scale to 0.5
@@ -583,7 +601,7 @@ open class SKZoomingScrollView: UIScrollView {
         */
         
         // reset position
-        photoImageView.frame = CGRect(x: 0, y: 0, width: photoImageView.frame.size.width, height: photoImageView.frame.size.height)
+        
         setNeedsLayout()
     }
     
