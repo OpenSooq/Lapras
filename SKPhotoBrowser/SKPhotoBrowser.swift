@@ -285,12 +285,13 @@ public extension SKPhotoBrowser {
                 return
             }
             isEndAnimationByToolBar = false
-            toolbar.updateToolbar(currentPageIndex)
-            
+            if toolbar != nil {
+                toolbar.updateToolbar(currentPageIndex)
+            }
             let pageFrame = frameForPageAtIndex(index)
             pagingScrollView.animate(pageFrame)
         }
-        if photos[index].is360 == false {
+        if index < numberOfPhotos, photos[index].is360 == false {
             hideControlsAfterDelay()
         } else {
             cancelControlHiding()
