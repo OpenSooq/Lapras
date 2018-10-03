@@ -12,7 +12,7 @@ import UIKit
     var underlyingImage: UIImage! { get }
     var caption: String! { get }
     var index: Int { get set}
-    var contentMode: UIViewContentMode { get set }
+    var contentMode: UIView.ContentMode { get set }
     var is360: Bool { get set }
     func loadUnderlyingImageAndNotify()
     func checkCache()
@@ -23,7 +23,7 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
     
     open var underlyingImage: UIImage!
     open var photoURL: String!
-    open var contentMode: UIViewContentMode = .scaleAspectFill
+    open var contentMode: UIView.ContentMode = .scaleAspectFill
     open var shouldCachePhotoURLImage: Bool = false
     open var caption: String!
     open var index: Int = 0
