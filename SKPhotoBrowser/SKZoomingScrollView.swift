@@ -144,7 +144,7 @@ open class CTPanoramaView: UIView {
     private func commonInit(_ fieldOfView: CGFloat = 70) {
         add(view: sceneView)
         
-        self.backgroundColor = UIColor.black
+        self.backgroundColor = UIColor.clear
         
         scene.rootNode.addChildNode(cameraNode)
         scene.background.contents = UIColor.clear
@@ -458,7 +458,7 @@ open class SKZoomingScrollView: UIScrollView {
         addSubview(indicatorView)
         
         // self
-        backgroundColor = UIColor.black
+        backgroundColor = UIColor.clear
         delegate = self
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
