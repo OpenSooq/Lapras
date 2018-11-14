@@ -9,6 +9,7 @@
 import UIKit
 
 public let SKPHOTO_LOADING_DID_END_NOTIFICATION = "photoLoadingDidEndNotification"
+public let SKPHOTO_LOADING_DID_END_WITH_ERROR_NOTIFICATION = "photoLoadingDidEndWithErrorNotification"
 
 // MARK: - SKPhotoBrowser
 open class SKPhotoBrowser: UIViewController {
