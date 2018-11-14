@@ -82,6 +82,10 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
             if let nsURL = URL(string: photoURL) {
                 var task: URLSessionDataTask!
                 task = session.dataTask(with: nsURL, completionHandler: { [weak self] (data, response, error) in
+                    if let errorFound = error as? NSError {
+                        let nserror = NSError(domain: "SKPhoto", code: -1, userInfo: ["message": errorFound.debugDescription, "url": nsURL.absoluteString])
+                        NotificationCenter.default.post(name: Notification.Name(rawValue: SKPHOTO_LOADING_DID_END_WITH_ERROR_NOTIFICATION), object: nserror)
+                    }
                     if let _self = self {
                         
                         if error != nil {
