@@ -34,7 +34,7 @@ open class SKPhotoBrowser: UIViewController {
     var currentPageIndex: Int = 0
     
     // for status check property
-    fileprivate var isEndAnimationByToolBar: Bool = true
+    open var isEndAnimationByToolBar: Bool = true
     fileprivate var isViewActive: Bool = false
     fileprivate var isPerformingLayout: Bool = false
     
