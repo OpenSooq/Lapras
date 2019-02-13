@@ -39,6 +39,8 @@ public struct SKPhotoBrowserOptions {
     
     public static var yFov = CGFloat(70)
     
+    public static var enableInfiniteScroll: Bool = false
+    
     // FIXED: Scrolling performance slowed #145
     // public static var imagePaddingX: CGFloat = 0
     // public static var imagePaddingY: CGFloat = 0

@@ -152,7 +152,7 @@ open class SKPhotoBrowser: UIViewController {
         toolbar.frame = frameForToolbarAtOrientation()
         
         // where did start
-        delegate?.didShowPhotoAtIndex?(currentPageIndex)
+        delegate?.didShowPhotoAtIndex?(normalisedIndex())
         
         isPerformingLayout = false
     }
@@ -204,7 +204,7 @@ open class SKPhotoBrowser: UIViewController {
         pagingScrollView.updateContentOffset(currentPageIndex)
         pagingScrollView.tilePages()
         
-        delegate?.didShowPhotoAtIndex?(currentPageIndex)
+        delegate?.didShowPhotoAtIndex?(normalisedIndex())
         
         isPerformingLayout = false
     }
@@ -224,12 +224,12 @@ open class SKPhotoBrowser: UIViewController {
         
         dismiss(animated: !animated) {
             completion?()
-            self.delegate?.didDismissAtPageIndex?(self.currentPageIndex)
+            self.delegate?.didDismissAtPageIndex?(self.normalisedIndex())
         }
     }
 
     open func determineAndClose() {
-        delegate?.willDismissAtPageIndex?(currentPageIndex)
+        delegate?.willDismissAtPageIndex?(normalisedIndex())
         animator.willDismiss(self)
     }
     
@@ -307,7 +307,7 @@ public extension SKPhotoBrowser {
     }
     
     func jumpToPageAtIndex(_ index: Int) {
-        if index < numberOfPhotos {
+        if index < numberOfPhotos || SKPhotoBrowserOptions.enableInfiniteScroll {
             if !isEndAnimationByToolBar {
                 return
             }
@@ -326,7 +326,11 @@ public extension SKPhotoBrowser {
     }
     
     func photoAtIndex(_ index: Int) -> SKPhotoProtocol {
-        return photos[index]
+        if SKPhotoBrowserOptions.enableInfiniteScroll {
+            return photos[index % photos.count]
+        } else {
+            return photos[index]
+        }
     }
     
     @objc func gotoPreviousPage() {
@@ -507,7 +511,7 @@ internal extension SKPhotoBrowser {
     }
     
     @objc func deleteButtonPressed(_ sender: UIButton) {
-        delegate?.removePhoto?(self, index: currentPageIndex) { [weak self] in
+        delegate?.removePhoto?(self, index: normalisedIndex()) { [weak self] in
             self?.deleteImage()
         }
     }
@@ -517,7 +521,7 @@ internal extension SKPhotoBrowser {
     }
     
     @objc func actionButtonPressed(ignoreAndShare: Bool) {
-        delegate?.willShowActionSheet?(currentPageIndex)
+        delegate?.willShowActionSheet?(normalisedIndex())
         
         guard numberOfPhotos > 0 else {
             return
@@ -529,7 +533,7 @@ internal extension SKPhotoBrowser {
             }))
             for idx in titles.indices {
                 actionSheetController.addAction(UIAlertAction(title: titles[idx], style: .default, handler: { (action) -> Void in
-                    self.delegate?.didDismissActionSheetWithButtonIndex?(idx, photoIndex: self.currentPageIndex)
+                    self.delegate?.didDismissActionSheetWithButtonIndex?(idx, photoIndex: self.normalisedIndex())
                 }))
             }
             
@@ -642,6 +646,10 @@ private extension SKPhotoBrowser {
             dismissPhotoBrowser(animated: true)
         }
     }
+    
+    func normalisedIndex() -> Int {
+        return SKPhotoBrowserOptions.enableInfiniteScroll ? (currentPageIndex % photos.count) : currentPageIndex
+    }
 }
 
 // MARK: -  UIScrollView Delegate
@@ -661,10 +669,15 @@ extension SKPhotoBrowser: UIScrollViewDelegate {
         // Calculate current page
         let previousCurrentPage = currentPageIndex
         let visibleBounds = pagingScrollView.bounds
-        currentPageIndex = min(max(Int(floor(visibleBounds.midX / visibleBounds.width)), 0), numberOfPhotos - 1)
+        
+        if SKPhotoBrowserOptions.enableInfiniteScroll  {
+            currentPageIndex = max(Int(floor(visibleBounds.midX / visibleBounds.width)), 0)
+        } else {
+            currentPageIndex = min(max(Int(floor(visibleBounds.midX / visibleBounds.width)), 0), numberOfPhotos - 1)
+        }
         
         if currentPageIndex != previousCurrentPage {
-            delegate?.didShowPhotoAtIndex?(currentPageIndex)
+            delegate?.didShowPhotoAtIndex?(normalisedIndex())
             toolbar.updateToolbar(currentPageIndex)
         }
     }
@@ -681,7 +694,7 @@ extension SKPhotoBrowser: UIScrollViewDelegate {
             hideControlsAfterDelay()
         }
         
-        delegate?.didScrollToIndex?(Int(currentIndex))
+        delegate?.didScrollToIndex?(Int(currentIndex) % photos.count)
     }
     
     public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {

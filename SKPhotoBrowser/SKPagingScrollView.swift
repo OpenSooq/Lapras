@@ -15,8 +15,16 @@ class SKPagingScrollView: UIScrollView {
     fileprivate var recycledPages = [SKZoomingScrollView]()
     
     fileprivate weak var browser: SKPhotoBrowser?
+    
     var numberOfPhotos: Int {
-        return browser?.photos.count ?? 0
+        if let found = browser?.photos.count, found > 0 {
+            if SKPhotoBrowserOptions.enableInfiniteScroll {
+                return found * 1000
+            } else {
+                return found
+            }
+        }
+        return 0
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -53,14 +61,16 @@ class SKPagingScrollView: UIScrollView {
         if currentPageIndex == pageIndex {
             // Previous
             if pageIndex > 0 {
-                let previousPhoto = browser.photos[pageIndex - 1]
+                let tmp = SKPhotoBrowserOptions.enableInfiniteScroll ? (pageIndex - 1) % browser.photos.count : (pageIndex - 1)
+                let previousPhoto = browser.photos[tmp]
                 if previousPhoto.underlyingImage == nil {
                     previousPhoto.loadUnderlyingImageAndNotify()
                 }
             }
             // Next
             if pageIndex < numberOfPhotos - 1 {
-                let nextPhoto = browser.photos[pageIndex + 1]
+                let tmp = SKPhotoBrowserOptions.enableInfiniteScroll ? (pageIndex + 1) % browser.photos.count : (pageIndex + 1)
+                let nextPhoto = browser.photos[tmp]
                 if nextPhoto.underlyingImage == nil {
                     nextPhoto.loadUnderlyingImageAndNotify()
                 }
@@ -146,7 +156,8 @@ class SKPagingScrollView: UIScrollView {
             let page: SKZoomingScrollView = SKZoomingScrollView(frame: frame, browser: browser)
             page.frame = frameForPageAtIndex(index)
             page.tag = index + pageIndexTagOffset
-            page.photo = browser.photos[index]
+            let tmp = SKPhotoBrowserOptions.enableInfiniteScroll ? index % browser.photos.count : index
+            page.photo = browser.photos[tmp]
             
             visiblePages.append(page)
             addSubview(page)

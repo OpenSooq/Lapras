@@ -41,16 +41,30 @@ class SKToolbar: UIToolbar {
     }
     
     func updateToolbar(_ currentPageIndex: Int) {
+        
         guard let browser = browser else { return }
         
-        if browser.numberOfPhotos > 1 {
-            toolCounterLabel.text = "\(currentPageIndex + 1) / \(browser.numberOfPhotos)"
+        if SKPhotoBrowserOptions.enableInfiniteScroll {
+            
+            if browser.numberOfPhotos > 1 {
+                let index = browser.currentPageIndex % browser.numberOfPhotos
+                toolCounterLabel.text = "\(index + 1) / \(browser.numberOfPhotos)"
+            } else {
+                toolCounterLabel.text = nil
+            }
+            
+            toolPreviousButton.isEnabled = (browser.currentPageIndex > 0)
+            toolNextButton.isEnabled = true
         } else {
-            toolCounterLabel.text = nil
+            if browser.numberOfPhotos > 1 {
+                toolCounterLabel.text = "\(currentPageIndex + 1) / \(browser.numberOfPhotos)"
+            } else {
+                toolCounterLabel.text = nil
+            }
+            
+            toolPreviousButton.isEnabled = (currentPageIndex > 0)
+            toolNextButton.isEnabled = (currentPageIndex < browser.numberOfPhotos - 1)
         }
-        
-        toolPreviousButton.isEnabled = (currentPageIndex > 0)
-        toolNextButton.isEnabled = (currentPageIndex < browser.numberOfPhotos - 1)
     }
 }
 
