@@ -291,8 +291,13 @@ public extension SKPhotoBrowser {
 public extension SKPhotoBrowser {
     func initializePageIndex(_ index: Int) {
         var i = index
+
         if index >= numberOfPhotos {
             i = numberOfPhotos - 1
+        }
+        
+        if SKPhotoBrowserOptions.enableInfiniteScroll {
+            i = i + numberOfPhotos * 500
         }
         
         initialPageIndex = i
