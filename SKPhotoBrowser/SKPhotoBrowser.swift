@@ -258,6 +258,14 @@ open class SKPhotoBrowser: UIViewController {
         pageFrame.origin.x = (bounds.size.width * CGFloat(index)) + 10
         return pageFrame
     }
+    
+    open func isInfiniteScrollEnabled() -> Bool {
+        return SKPhotoBrowserOptions.enableInfiniteScroll == true && photos.count > 1
+    }
+    
+    func normalisedIndex() -> Int {
+        return isInfiniteScrollEnabled() ? (currentPageIndex % photos.count) : currentPageIndex
+    }
 }
 
 // MARK: - Public Function For Customizing Buttons
@@ -296,7 +304,7 @@ public extension SKPhotoBrowser {
             i = numberOfPhotos - 1
         }
         
-        if SKPhotoBrowserOptions.enableInfiniteScroll {
+        if isInfiniteScrollEnabled() {
             i = i + numberOfPhotos * 500
         }
         
@@ -312,7 +320,7 @@ public extension SKPhotoBrowser {
     }
     
     func jumpToPageAtIndex(_ index: Int) {
-        if index < numberOfPhotos || SKPhotoBrowserOptions.enableInfiniteScroll {
+        if index < numberOfPhotos || isInfiniteScrollEnabled() {
             if !isEndAnimationByToolBar {
                 return
             }
@@ -331,7 +339,7 @@ public extension SKPhotoBrowser {
     }
     
     func photoAtIndex(_ index: Int) -> SKPhotoProtocol {
-        if SKPhotoBrowserOptions.enableInfiniteScroll {
+        if isInfiniteScrollEnabled() {
             return photos[index % photos.count]
         } else {
             return photos[index]
@@ -651,10 +659,6 @@ private extension SKPhotoBrowser {
             dismissPhotoBrowser(animated: true)
         }
     }
-    
-    func normalisedIndex() -> Int {
-        return SKPhotoBrowserOptions.enableInfiniteScroll ? (currentPageIndex % photos.count) : currentPageIndex
-    }
 }
 
 // MARK: -  UIScrollView Delegate
@@ -675,7 +679,7 @@ extension SKPhotoBrowser: UIScrollViewDelegate {
         let previousCurrentPage = currentPageIndex
         let visibleBounds = pagingScrollView.bounds
         
-        if SKPhotoBrowserOptions.enableInfiniteScroll  {
+        if isInfiniteScrollEnabled() {
             currentPageIndex = max(Int(floor(visibleBounds.midX / visibleBounds.width)), 0)
         } else {
             currentPageIndex = min(max(Int(floor(visibleBounds.midX / visibleBounds.width)), 0), numberOfPhotos - 1)

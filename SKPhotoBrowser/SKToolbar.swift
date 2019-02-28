@@ -44,7 +44,7 @@ class SKToolbar: UIToolbar {
         
         guard let browser = browser else { return }
         
-        if SKPhotoBrowserOptions.enableInfiniteScroll {
+        if browser.isInfiniteScrollEnabled() {
             
             if browser.numberOfPhotos > 1 {
                 let index = browser.currentPageIndex % browser.numberOfPhotos

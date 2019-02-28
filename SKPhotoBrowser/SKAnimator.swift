@@ -71,7 +71,7 @@ class SKAnimator: NSObject, SKPhotoBrowserAnimatorDelegate {
     }
     
     func willDismiss(_ browser: SKPhotoBrowser) {
-        let index = SKPhotoBrowserOptions.enableInfiniteScroll ? browser.currentPageIndex % browser.photos.count : browser.currentPageIndex
+        let index = browser.isInfiniteScrollEnabled() ? browser.currentPageIndex % browser.photos.count : browser.currentPageIndex
         guard let sender = browser.delegate?.viewForPhoto?(browser, index: index),
             let image = browser.photoAtIndex(browser.currentPageIndex).underlyingImage,
             let scrollView = browser.pageDisplayedAtIndex(browser.currentPageIndex) else {
