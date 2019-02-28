@@ -107,14 +107,24 @@ private extension SKToolbar {
         setItems(items, animated: false)
     }
     
+    func isRTL() -> Bool{
+        return UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft
+    }
+    
     func setupPreviousButton() {
         let previousBtn = SKPreviousButton(frame: frame)
+        if isRTL() {
+            previousBtn.transform = CGAffineTransform(scaleX: -1.0, y: 1.0)
+        }
         previousBtn.addTarget(browser, action: #selector(SKPhotoBrowser.gotoPreviousPage), for: .touchUpInside)
         toolPreviousButton = UIBarButtonItem(customView: previousBtn)
     }
     
     func setupNextButton() {
         let nextBtn = SKNextButton(frame: frame)
+        if isRTL() {
+            nextBtn.transform = CGAffineTransform(scaleX: -1.0, y: 1.0)
+        }
         nextBtn.addTarget(browser, action: #selector(SKPhotoBrowser.gotoNextPage), for: .touchUpInside)
         toolNextButton = UIBarButtonItem(customView: nextBtn)
     }
