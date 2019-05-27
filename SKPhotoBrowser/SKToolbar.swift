@@ -48,7 +48,11 @@ class SKToolbar: UIToolbar {
             
             if browser.numberOfPhotos > 1 {
                 let index = browser.currentPageIndex % browser.numberOfPhotos
-                toolCounterLabel.text = "\(index + 1) / \(browser.numberOfPhotos)"
+                if SKPhotoBrowserOptions.reverseToolbarCounterLabel {
+                    toolCounterLabel.text = "\(browser.numberOfPhotos - index) / \(browser.numberOfPhotos)"
+                } else {
+                    toolCounterLabel.text = "\(index + 1) / \(browser.numberOfPhotos)"
+                }
             } else {
                 toolCounterLabel.text = nil
             }
