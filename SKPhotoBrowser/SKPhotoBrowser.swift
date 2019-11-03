@@ -12,7 +12,7 @@ public let SKPHOTO_LOADING_DID_END_NOTIFICATION = "photoLoadingDidEndNotificatio
 public let SKPHOTO_LOADING_DID_END_WITH_ERROR_NOTIFICATION = "photoLoadingDidEndWithErrorNotification"
 
 // MARK: - SKPhotoBrowser
-open class SKPhotoBrowser: UIViewController {
+open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelegate {
     
     let pageIndexTagOffset: Int = 1000
     
@@ -106,6 +106,7 @@ open class SKPhotoBrowser: UIViewController {
         modalPresentationCapturesStatusBarAppearance = true
         modalPresentationStyle = .custom
         modalTransitionStyle = .crossDissolve
+        transitioningDelegate = self
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.handleSKPhotoLoadingDidEndNotification(_:)), name: NSNotification.Name(rawValue: SKPHOTO_LOADING_DID_END_NOTIFICATION), object: nil)
     }
@@ -570,7 +571,7 @@ internal extension SKPhotoBrowser {
     }
 }
 
-// MARK: - Private Function 
+// MARK: - Private Function
 private extension SKPhotoBrowser {
     func configureAppearance() {
         view.backgroundColor = UIColor.black
