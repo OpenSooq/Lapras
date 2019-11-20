@@ -85,9 +85,9 @@ class SKPagingScrollView: UIScrollView {
         }
     }
     
-    func animate(_ frame: CGRect) {
+    func animate(_ frame: CGRect, animated: Bool = true) {
         DispatchQueue.main.async {
-            self.setContentOffset(CGPoint(x: frame.origin.x - self.sideMargin, y: 0), animated: true)
+            self.setContentOffset(CGPoint(x: frame.origin.x - self.sideMargin, y: 0), animated: animated)
         }
     }
     

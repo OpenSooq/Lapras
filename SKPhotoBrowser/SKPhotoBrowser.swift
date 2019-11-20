@@ -320,7 +320,7 @@ public extension SKPhotoBrowser {
         }
     }
     
-    func jumpToPageAtIndex(_ index: Int) {
+    func jumpToPageAtIndex(_ index: Int, animated: Bool = true) {
         if index < numberOfPhotos || isInfiniteScrollEnabled() {
             if !isEndAnimationByToolBar {
                 return
@@ -330,7 +330,7 @@ public extension SKPhotoBrowser {
                 toolbar.updateToolbar(currentPageIndex)
             }
             let pageFrame = frameForPageAtIndex(index)
-            pagingScrollView.animate(pageFrame)
+            pagingScrollView.animate(pageFrame, animated: animated)
         }
         if index < numberOfPhotos, photos[index].is360 == false {
             hideControlsAfterDelay()
