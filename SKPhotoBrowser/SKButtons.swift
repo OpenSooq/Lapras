@@ -23,7 +23,13 @@ class SKButton: UIButton {
     var size: CGSize = CGSize(width: 44, height: 44)
     var margin: CGFloat = 5
     
-    var buttonTopOffset: CGFloat { return 5 }
+    var buttonTopOffset: CGFloat {
+        if #available(iOS 11.0, *) {
+            let window = UIApplication.shared.keyWindow
+            return max(window?.safeAreaInsets.top ?? 20, 20)
+        }
+        return 20
+    }
     
     func setup(_ imageName: String) {
         backgroundColor = UIColor.clear
