@@ -266,7 +266,6 @@ open class CTPanoramaView: UIView {
     var lastScale: CGFloat = 0
 
     @objc private func handlePinch(panRec: UIPinchGestureRecognizer) {
-        
         if panRec.state == .began {
             lastScale = panRec.scale
         } else if panRec.state == .changed {
@@ -486,6 +485,9 @@ open class SKZoomingScrollView: UIScrollView {
             photoImageView = detectingImageView
             photoImageView.contentMode = .bottom
             photoImageView.backgroundColor = UIColor.black
+            if photo.isVideo {
+                detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
+            }
             insertSubview(photoImageView, belowSubview: indicatorView)
         }
     }
@@ -714,7 +716,7 @@ extension SKZoomingScrollView: UIScrollViewDelegate {
     }
     
     public func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
-        scrollView.pinchGestureRecognizer?.isEnabled = !photo.is360
+        scrollView.pinchGestureRecognizer?.isEnabled = !photo.is360 && !photo.isVideo
         photoBrowser?.cancelControlHiding()
     }
     
@@ -757,6 +759,14 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
     func handleImageViewSingleTap(_ touchPoint: CGPoint) {
         guard let browser = photoBrowser else {
             return
+        }
+        let currentPageIndex = browser.normalisedIndex()
+        if currentPageIndex >= 0, currentPageIndex < browser.photos.count {
+            let photo = browser.photos[currentPageIndex]
+            if photo.isVideo {
+                browser.delegate?.didTapVideoThumbnail?(photo)
+                return
+            }
         }
         if SKPhotoBrowserOptions.enableSingleTapDismiss {
             browser.determineAndClose()

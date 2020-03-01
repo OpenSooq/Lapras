@@ -12,6 +12,7 @@ import UIKit
 open class SKLocalPhoto: NSObject, SKPhotoProtocol {
     
     public var is360: Bool = false
+    public var isVideo: Bool = false
     
     open var underlyingImage: UIImage!
     open var photoURL: String!

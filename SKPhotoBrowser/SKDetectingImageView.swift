@@ -14,6 +14,7 @@ import UIKit
 }
 
 class SKDetectingImageView: UIImageView {
+    
     weak var delegate: SKDetectingImageViewDelegate?
     
     required init?(coder aDecoder: NSCoder) {
@@ -24,6 +25,22 @@ class SKDetectingImageView: UIImageView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
+    }
+    
+    func addIconOverlayer(_ image: UIImage?) {
+        let imageView = UIImageView(frame: .zero)
+        imageView.image = image
+        addSubview(imageView)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        for item in subviews {
+            if let imageview = item as? UIImageView {
+                imageview.sizeToFit()
+                imageview.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
+            }
+        }
     }
     
     @objc func handleDoubleTap(_ recognizer: UITapGestureRecognizer) {
