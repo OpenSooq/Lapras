@@ -152,7 +152,7 @@ open class CTPanoramaView: UIView {
         yFov = fieldOfView
         
         sceneView.scene = scene
-        sceneView.backgroundColor = UIColor.black
+        sceneView.backgroundColor = UIColor.clear
         
         switchControlMethod(to: controlMethod)
         

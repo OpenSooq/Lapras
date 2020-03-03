@@ -264,29 +264,40 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
         return SKPhotoBrowserOptions.enableInfiniteScroll == true && photos.count > 1
     }
     
-    func normalisedIndex() -> Int {
+    open func normalisedIndex() -> Int {
         return isInfiniteScrollEnabled() ? (currentPageIndex % photos.count) : currentPageIndex
     }
     
     func preset360Viewer(_ photo: SKPhotoProtocol) {
         let photoImageView = CTPanoramaView(frame: self.view.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
         photoImageView.contentMode = .bottom
-        photoImageView.backgroundColor = UIColor.black
+        photoImageView.backgroundColor = UIColor.clear
         if let variantPhoto = photo.variantPhoto {
             photoImageView.image = variantPhoto.underlyingImage
             
         }
         let closeButton = SKCloseButton(frame: CGRect(x: 5, y: 10, width: 44, height: 44))
-        //closeButton.addTarget(self, action: #selector(closeButtonPressed(_:)), for: .touchUpInside)
+        closeButton.center = CGPoint(x: self.view.bounds.midX, y: self.view.bounds.height - 60)
+        closeButton.addTarget(self, action: #selector(panoramaCloseButtonPressed(_:)), for: .touchUpInside)
         photoImageView.addSubview(closeButton)
         applicationWindow.addSubview(photoImageView)
         
         photoImageView.alpha = 0.8
-        photoImageView.transform = CGAffineTransform(scaleX: 0.8, y: 1.2)
+        photoImageView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
         
         UIView.animate(withDuration: 0.2) {
             photoImageView.alpha = 1
             photoImageView.transform = .identity
+        }
+    }
+    
+    @objc func panoramaCloseButtonPressed(_ sender: Any) {
+        guard let panorama = (sender as? UIView)?.superview else { return}
+        UIView.animate(withDuration: 0.2, animations: {
+            panorama.alpha = 0.8
+            panorama.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+        }) { _ in
+            panorama.removeFromSuperview()
         }
     }
 }
@@ -714,7 +725,7 @@ extension SKPhotoBrowser: UIScrollViewDelegate {
         }
     }
     
-    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    open func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         
         let currentIndex = pagingScrollView.contentOffset.x / pagingScrollView.frame.size.width
         let currentIndexInt = Int(ceil(currentIndex))
