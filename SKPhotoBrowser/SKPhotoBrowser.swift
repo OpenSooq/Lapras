@@ -267,6 +267,28 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
     func normalisedIndex() -> Int {
         return isInfiniteScrollEnabled() ? (currentPageIndex % photos.count) : currentPageIndex
     }
+    
+    func preset360Viewer(_ photo: SKPhotoProtocol) {
+        let photoImageView = CTPanoramaView(frame: self.view.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
+        photoImageView.contentMode = .bottom
+        photoImageView.backgroundColor = UIColor.black
+        if let variantPhoto = photo.variantPhoto {
+            photoImageView.image = variantPhoto.underlyingImage
+            
+        }
+        let closeButton = SKCloseButton(frame: CGRect(x: 5, y: 10, width: 44, height: 44))
+        //closeButton.addTarget(self, action: #selector(closeButtonPressed(_:)), for: .touchUpInside)
+        photoImageView.addSubview(closeButton)
+        applicationWindow.addSubview(photoImageView)
+        
+        photoImageView.alpha = 0.8
+        photoImageView.transform = CGAffineTransform(scaleX: 0.8, y: 1.2)
+        
+        UIView.animate(withDuration: 0.2) {
+            photoImageView.alpha = 1
+            photoImageView.transform = .identity
+        }
+    }
 }
 
 // MARK: - Public Function For Customizing Buttons

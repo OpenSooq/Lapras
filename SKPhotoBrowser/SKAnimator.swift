@@ -54,7 +54,7 @@ class SKAnimator: NSObject, SKPhotoBrowserAnimatorDelegate {
         let imageRatio = imageFromView.size.width / imageFromView.size.height
         
         senderViewOriginalFrame = calcOriginFrame(sender)
-        finalImageViewFrame =  photo.is360 ?  CGRect(x: 0, y: 0, width: SKMesurement.screenWidth, height: SKMesurement.screenHeight) : calcFinalFrame(imageRatio)
+        finalImageViewFrame = calcFinalFrame(imageRatio)
         
         resizableImageView = UIImageView(image: imageFromView)
         resizableImageView!.frame = senderViewOriginalFrame

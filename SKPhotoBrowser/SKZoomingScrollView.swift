@@ -466,16 +466,16 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     func setupImageView() {
-        if photo.is360 {
-            if photoImageView is CTPanoramaView {
-                return
-            }
-            photoImageView?.removeFromSuperview()
-            photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
-            photoImageView.contentMode = .bottom
-            photoImageView.backgroundColor = UIColor.black
-            insertSubview(photoImageView, belowSubview: indicatorView)
-        } else {
+//        if photo.is360 {
+//            if photoImageView is CTPanoramaView {
+//                return
+//            }
+//            photoImageView?.removeFromSuperview()
+//            photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
+//            photoImageView.contentMode = .bottom
+//            photoImageView.backgroundColor = UIColor.black
+//            insertSubview(photoImageView, belowSubview: indicatorView)
+//        } else {
             if photoImageView is SKDetectingImageView {
                 return
             }
@@ -485,11 +485,14 @@ open class SKZoomingScrollView: UIScrollView {
             photoImageView = detectingImageView
             photoImageView.contentMode = .bottom
             photoImageView.backgroundColor = UIColor.black
+            if photo.is360 {
+                detectingImageView.addIconOverlayer(UIImage(named: "post_view_360_marker"))
+            }
             if photo.isVideo {
                 detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
             }
             insertSubview(photoImageView, belowSubview: indicatorView)
-        }
+//        }
     }
     
     // MARK: - override
@@ -502,12 +505,12 @@ open class SKZoomingScrollView: UIScrollView {
         
         let boundsSize = bounds.size
         
-        if photo.is360 {
-            if !photoImageView.frame.equalTo(bounds) {
-                photoImageView.frame = CGRect(x: 0, y: 0, width: bounds.size.width, height: bounds.size.height)
-            }
-            return
-        }
+//        if photo.is360 {
+//            if !photoImageView.frame.equalTo(bounds) {
+//                photoImageView.frame = CGRect(x: 0, y: 0, width: bounds.size.width, height: bounds.size.height)
+//            }
+//            return
+//        }
         
         var frameToCenter = photoImageView.frame
         
@@ -541,10 +544,6 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     open func setMaxMinZoomScalesForCurrentBounds() {
-        
-        if photo.is360 {
-            return
-        }
         
         maximumZoomScale = 1
         minimumZoomScale = 1
@@ -660,20 +659,19 @@ open class SKZoomingScrollView: UIScrollView {
             
             var photoImageViewFrame = CGRect.zero
             photoImageViewFrame.origin = CGPoint.zero
-            photoImageViewFrame.size = image.size
+            if photo.is360, image.size.height > UIScreen.main.bounds.height/2 {
+                photoImageViewFrame.size = CGSize(width: image.size.width, height: image.size.height/2)
+            } else {
+                photoImageViewFrame.size = image.size
+            }
             
             photoImageView.frame = photoImageViewFrame
-            
-            if let panoramaView = photoImageView as? CTPanoramaView {
-                contentSize = self.frame.size
-                maximumZoomScale = 1
-                minimumZoomScale = 1
-                zoomScale = 1
-            }
+        
             if let imageView = photoImageView as? UIImageView {
                 contentSize = photoImageViewFrame.size
                 setMaxMinZoomScalesForCurrentBounds()
             }
+            
         }
         setNeedsLayout()
     }
@@ -765,6 +763,10 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
             let photo = browser.photos[currentPageIndex]
             if photo.isVideo {
                 browser.delegate?.didTapVideoThumbnail?(photo)
+                return
+            }
+            if photo.is360 {
+                browser.preset360Viewer(photo)
                 return
             }
         }

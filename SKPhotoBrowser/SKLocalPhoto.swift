@@ -11,8 +11,9 @@ import UIKit
 // MARK: - SKLocalPhoto
 open class SKLocalPhoto: NSObject, SKPhotoProtocol {
     
-    public var is360: Bool = false
-    public var isVideo: Bool = false
+    open var is360: Bool = false
+    open var isVideo: Bool = false
+    open var variantPhoto: SKPhotoProtocol?
     
     open var underlyingImage: UIImage!
     open var photoURL: String!

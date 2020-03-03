@@ -15,13 +15,14 @@ import UIKit
     var contentMode: UIView.ContentMode { get set }
     var is360: Bool { get set }
     var isVideo: Bool { get set }
+    var variantPhoto: SKPhotoProtocol? { get set }
     func loadUnderlyingImageAndNotify()
     func checkCache()
 }
 
 // MARK: - SKPhoto
 open class SKPhoto: NSObject, SKPhotoProtocol {
-    
+
     open var underlyingImage: UIImage!
     open var photoURL: String!
     open var contentMode: UIView.ContentMode = .scaleAspectFill
@@ -31,6 +32,7 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
     
     open var is360: Bool = false
     open var isVideo: Bool = false
+    open var variantPhoto: SKPhotoProtocol?
     
     override init() {
         super.init()
