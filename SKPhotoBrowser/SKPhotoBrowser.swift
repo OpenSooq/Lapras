@@ -31,7 +31,7 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
     var backgroundView: UIView!
     
     var initialPageIndex: Int = 0
-    var currentPageIndex: Int = 0
+    open var currentPageIndex: Int = 0
     
     // for status check property
     open var isEndAnimationByToolBar: Bool = true
@@ -300,6 +300,25 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
             panorama.removeFromSuperview()
         }
     }
+    
+    open func jumpToPageAtIndex(_ index: Int, animated: Bool = true) {
+        if index < numberOfPhotos || isInfiniteScrollEnabled() {
+            if !isEndAnimationByToolBar {
+                return
+            }
+            isEndAnimationByToolBar = false
+            if toolbar != nil {
+                toolbar.updateToolbar(currentPageIndex)
+            }
+            let pageFrame = frameForPageAtIndex(index)
+            pagingScrollView.animate(pageFrame, animated: animated)
+        }
+        if index < numberOfPhotos, photos[index].is360 == false {
+            hideControlsAfterDelay()
+        } else {
+            cancelControlHiding()
+        }
+    }
 }
 
 // MARK: - Public Function For Customizing Buttons
@@ -350,25 +369,6 @@ public extension SKPhotoBrowser {
             if !isViewActive {
                 pagingScrollView.tilePages()
             }
-        }
-    }
-    
-    func jumpToPageAtIndex(_ index: Int, animated: Bool = true) {
-        if index < numberOfPhotos || isInfiniteScrollEnabled() {
-            if !isEndAnimationByToolBar {
-                return
-            }
-            isEndAnimationByToolBar = false
-            if toolbar != nil {
-                toolbar.updateToolbar(currentPageIndex)
-            }
-            let pageFrame = frameForPageAtIndex(index)
-            pagingScrollView.animate(pageFrame, animated: animated)
-        }
-        if index < numberOfPhotos, photos[index].is360 == false {
-            hideControlsAfterDelay()
-        } else {
-            cancelControlHiding()
         }
     }
     

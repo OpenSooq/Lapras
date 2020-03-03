@@ -28,7 +28,8 @@ class SKDetectingImageView: UIImageView {
     }
     
     func addIconOverlayer(_ image: UIImage?) {
-        let imageView = UIImageView(frame: .zero)
+        let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 150, height: 150))
+        imageView.contentMode = .scaleAspectFit
         imageView.image = image
         addSubview(imageView)
     }
@@ -37,7 +38,6 @@ class SKDetectingImageView: UIImageView {
         super.layoutSubviews()
         for item in subviews {
             if let imageview = item as? UIImageView {
-                imageview.sizeToFit()
                 imageview.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
             }
         }
