@@ -28,10 +28,26 @@ class SKDetectingImageView: UIImageView {
     }
     
     func addIconOverlayer(_ image: UIImage?) {
+        subviews.forEach({ $0.removeFromSuperview() })
         let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 150, height: 150))
         imageView.contentMode = .scaleAspectFit
         imageView.image = image
         addSubview(imageView)
+    }
+    
+    func addDownloadProgress(_ progress: Int) {
+        subviews.forEach({ $0.removeFromSuperview() })
+        let label = UILabel(frame: .zero)
+        label.text = "\(progress)%"
+        label.font = UIFont.boldSystemFont(ofSize: 70)
+        label.textColor = .white
+        label.layer.shadowColor = UIColor.black.cgColor
+        label.layer.shadowRadius = 3
+        label.layer.shadowOffset = .zero
+        label.layer.shadowOpacity = 0.5
+        label.layer.shouldRasterize = true
+        label.layer.masksToBounds = false
+        addSubview(label)
     }
     
     override func layoutSubviews() {
@@ -39,6 +55,10 @@ class SKDetectingImageView: UIImageView {
         for item in subviews {
             if let imageview = item as? UIImageView {
                 imageview.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
+            }
+            if let label = item as? UILabel {
+                label.sizeToFit()
+                label.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
             }
         }
     }

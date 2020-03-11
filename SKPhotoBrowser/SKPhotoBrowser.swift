@@ -57,6 +57,7 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
     
     // statusbar initial state
     private var statusbarHidden: Bool = UIApplication.shared.isStatusBarHidden
+    private var session: URLSession?
     
     // MARK - Initializer
     required public init?(coder aDecoder: NSCoder) {
@@ -91,6 +92,7 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
     }
     
     deinit {
+        session?.invalidateAndCancel()
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -109,6 +111,8 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
         transitioningDelegate = self
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.handleSKPhotoLoadingDidEndNotification(_:)), name: NSNotification.Name(rawValue: SKPHOTO_LOADING_DID_END_NOTIFICATION), object: nil)
+        
+        session = URLSession(configuration: URLSessionConfiguration.background(withIdentifier: "SKPhotoBrowser"), delegate: self, delegateQueue: OperationQueue())
     }
     
     // MARK: - override
@@ -317,6 +321,57 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
             hideControlsAfterDelay()
         } else {
             cancelControlHiding()
+        }
+    }
+    
+    func startVideoDownload(_ url: String) {
+        guard let urlObject = URL(string: url) else {
+            return
+        }
+        videoDownloadProgress[url] = 0
+        session?.downloadTask(with: urlObject).resume()
+    }
+    
+    var videoDownloadProgress = [String: Int]()
+}
+
+extension SKPhotoBrowser: URLSessionDownloadDelegate {
+    
+    public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        let percentDownloaded = Int(100 * CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite) )
+        if let url = downloadTask.originalRequest?.url?.absoluteString {
+            DispatchQueue.main.async { [weak self] in
+                guard let strongSelf = self else { return }
+                strongSelf.videoDownloadProgress[url] = percentDownloaded
+                strongSelf.pagingScrollView.reloadVideo()
+            }
+        }
+    }
+    
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.videoDownloadProgress.removeValue(forKey: task.originalRequest?.url?.absoluteString ?? "")
+            strongSelf.pagingScrollView.reloadVideo()
+        }
+    }
+    
+    public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        guard let url = downloadTask.originalRequest?.url else {
+            return
+        }
+        do {
+            let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(url.lastPathComponent)
+            if FileManager.default.fileExists(atPath: localTmp.absoluteString) {
+                try FileManager.default.removeItem(at: localTmp)
+            }
+            try FileManager.default.moveItem(at: location, to: localTmp)
+        } catch {
+            // Ignore.
+        }
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.pagingScrollView.reloadVideo()
         }
     }
 }

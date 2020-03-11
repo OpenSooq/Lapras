@@ -16,6 +16,7 @@ import UIKit
     var is360: Bool { get set }
     var isVideo: Bool { get set }
     var variantPhoto: SKPhotoProtocol? { get set }
+    var variantVideoUrl: String? { get set }
     func loadUnderlyingImageAndNotify()
     func checkCache()
 }
@@ -33,6 +34,7 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
     open var is360: Bool = false
     open var isVideo: Bool = false
     open var variantPhoto: SKPhotoProtocol?
+    open var variantVideoUrl: String?
     
     override init() {
         super.init()

@@ -466,33 +466,38 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     func setupImageView() {
-//        if photo.is360 {
-//            if photoImageView is CTPanoramaView {
-//                return
-//            }
-//            photoImageView?.removeFromSuperview()
-//            photoImageView = CTPanoramaView(frame: self.bounds, fieldOfView: SKPhotoBrowserOptions.yFov)
-//            photoImageView.contentMode = .bottom
-//            photoImageView.backgroundColor = UIColor.black
-//            insertSubview(photoImageView, belowSubview: indicatorView)
-//        } else {
-            if photoImageView is SKDetectingImageView {
-                return
-            }
-            photoImageView?.removeFromSuperview()
-            let detectingImageView = SKDetectingImageView(frame: .zero)
-            detectingImageView.delegate = self
-            photoImageView = detectingImageView
-            photoImageView.contentMode = .bottom
-            photoImageView.backgroundColor = UIColor.black
-            if photo.is360 {
-                detectingImageView.addIconOverlayer(UIImage(named: "post_view_360_marker"))
-            }
-            if photo.isVideo {
+        if let detectingImageView = photoImageView as? SKDetectingImageView {
+            setupVideoImageView(detectingImageView)
+            return
+        }
+        photoImageView?.removeFromSuperview()
+        let detectingImageView = SKDetectingImageView(frame: .zero)
+        detectingImageView.delegate = self
+        photoImageView = detectingImageView
+        photoImageView.contentMode = .bottom
+        photoImageView.backgroundColor = UIColor.black
+        if photo.is360 {
+            detectingImageView.addIconOverlayer(UIImage(named: "post_view_360_marker"))
+        }
+        if photo.isVideo {
+            setupVideoImageView(detectingImageView)
+        }
+        insertSubview(photoImageView, belowSubview: indicatorView)
+    }
+    
+    func setupVideoImageView(_ detectingImageView: SKDetectingImageView) {
+        if let videoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: videoUrl)  {
+            let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(variantVideoUrlObj.lastPathComponent)
+            if FileManager.default.fileExists(atPath: localTmp.path) {
                 detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
+            } else if let progress = photoBrowser?.videoDownloadProgress[videoUrl] {
+                detectingImageView.addDownloadProgress(progress)
+            } else {
+                detectingImageView.addIconOverlayer(UIImage(named: "post_view_download_marker"))
             }
-            insertSubview(photoImageView, belowSubview: indicatorView)
-//        }
+        } else {
+            detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
+        }
     }
     
     // MARK: - override
@@ -504,13 +509,6 @@ open class SKZoomingScrollView: UIScrollView {
         super.layoutSubviews()
         
         let boundsSize = bounds.size
-        
-//        if photo.is360 {
-//            if !photoImageView.frame.equalTo(bounds) {
-//                photoImageView.frame = CGRect(x: 0, y: 0, width: bounds.size.width, height: bounds.size.height)
-//            }
-//            return
-//        }
         
         var frameToCenter = photoImageView.frame
         
@@ -762,7 +760,15 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
         if currentPageIndex >= 0, currentPageIndex < browser.photos.count {
             let photo = browser.photos[currentPageIndex]
             if photo.isVideo {
-                browser.delegate?.didTapVideoThumbnail?(photo)
+                if let variantVideoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: variantVideoUrl) {
+                    let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(variantVideoUrlObj.lastPathComponent)
+                    if FileManager.default.fileExists(atPath: localTmp.path) {
+                        browser.delegate?.didTapVideoThumbnail?(localTmp)
+                    } else if browser.videoDownloadProgress[variantVideoUrl] == nil {
+                        browser.startVideoDownload(photo.variantVideoUrl ?? "")
+                        setupImageView()
+                    }
+                }
                 return
             }
             if photo.is360 {

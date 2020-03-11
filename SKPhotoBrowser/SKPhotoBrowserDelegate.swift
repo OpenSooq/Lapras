@@ -80,6 +80,6 @@ import Foundation
     /**
      Tells the delegate that the controls view toggled visibility
      */
-    @objc optional func didTapVideoThumbnail(_ photo: SKPhotoProtocol) -> Void
+    @objc optional func didTapVideoThumbnail(_ fileUrl: URL) -> Void
 }
 
