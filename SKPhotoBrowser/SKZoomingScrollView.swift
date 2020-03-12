@@ -10,6 +10,9 @@ import UIKit
 import SceneKit
 import CoreMotion
 import ImageIO
+import AVFoundation
+import MediaPlayer
+import AVKit
 
 public protocol CTPanoramaCompass {
     func updateUI(rotationAngle: CGFloat, fieldOfViewAngle: CGFloat)
@@ -754,6 +757,28 @@ extension SKZoomingScrollView: SKDetectingViewDelegate {
 
 // MARK: - SKDetectingImageViewDelegate
 
+class SKAVPlayerViewController: AVPlayerViewController{
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: completion)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        let button = UIButton(type: .custom)
+        button.frame = CGRect(x: 0, y: 0, width: 65, height: 65)
+        button.backgroundColor = .clear
+        button.addTarget(self, action: #selector(customClick(_:)), for: .touchUpInside)
+        self.view.addSubview(button)
+    }
+    
+    @objc func customClick(_ sender: Any) {
+        self.willMove(toParent: nil)
+        self.view.removeFromSuperview()
+        self.removeFromParent()
+    }
+}
+
 extension SKZoomingScrollView: SKDetectingImageViewDelegate {
     func handleImageViewSingleTap(_ touchPoint: CGPoint) {
         guard let browser = photoBrowser else {
@@ -769,7 +794,11 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
                     }
                     let localTmp = cacheDirectory.appendingPathComponent(variantVideoUrlObj.lastPathComponent)
                     if FileManager.default.fileExists(atPath: localTmp.path) {
-                        browser.delegate?.didTapVideoThumbnail?(localTmp)
+                        let playerViewController = SKAVPlayerViewController()
+                        playerViewController.player = AVPlayer(url: localTmp)
+                        browser.addChild(playerViewController)
+                        browser.view.addSubview(playerViewController.view)
+                        playerViewController.didMove(toParent: browser)
                     } else if browser.videoDownloadProgress[variantVideoUrl] == nil {
                         browser.startVideoDownload(photo.variantVideoUrl ?? "")
                         setupImageView()
