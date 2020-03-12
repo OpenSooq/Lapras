@@ -487,7 +487,10 @@ open class SKZoomingScrollView: UIScrollView {
     
     func setupVideoImageView(_ detectingImageView: SKDetectingImageView) {
         if let videoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: videoUrl)  {
-            let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(variantVideoUrlObj.lastPathComponent)
+            guard let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+               return
+            }
+            let localTmp = cacheDirectory.appendingPathComponent(variantVideoUrlObj.lastPathComponent)
             if FileManager.default.fileExists(atPath: localTmp.path) {
                 detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
             } else if let progress = photoBrowser?.videoDownloadProgress[videoUrl] {
@@ -761,7 +764,10 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
             let photo = browser.photos[currentPageIndex]
             if photo.isVideo {
                 if let variantVideoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: variantVideoUrl) {
-                    let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(variantVideoUrlObj.lastPathComponent)
+                    guard let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+                        return
+                    }
+                    let localTmp = cacheDirectory.appendingPathComponent(variantVideoUrlObj.lastPathComponent)
                     if FileManager.default.fileExists(atPath: localTmp.path) {
                         browser.delegate?.didTapVideoThumbnail?(localTmp)
                     } else if browser.videoDownloadProgress[variantVideoUrl] == nil {

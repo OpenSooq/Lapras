@@ -360,8 +360,11 @@ extension SKPhotoBrowser: URLSessionDownloadDelegate {
         guard let url = downloadTask.originalRequest?.url else {
             return
         }
+        guard let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return
+        }
         do {
-            let localTmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(url.lastPathComponent)
+            let localTmp = cacheDirectory.appendingPathComponent(url.lastPathComponent)
             if FileManager.default.fileExists(atPath: localTmp.absoluteString) {
                 try FileManager.default.removeItem(at: localTmp)
             }
