@@ -333,6 +333,14 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
     }
     
     var videoDownloadProgress = [String: Int]()
+    
+    open func willPlayVideo() {
+        
+    }
+    
+    open func didCloseVideoPlayer() {
+        
+    }
 }
 
 extension SKPhotoBrowser: URLSessionDownloadDelegate {

@@ -774,6 +774,7 @@ class SKAVPlayerViewController: AVPlayerViewController{
     }
     
     @objc func customClick(_ sender: Any) {
+        (self.parent as? SKPhotoBrowser)?.didCloseVideoPlayer()
         self.willMove(toParent: nil)
         self.view.removeFromSuperview()
         self.removeFromParent()
@@ -795,6 +796,7 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
                     }
                     let localTmp = cacheDirectory.appendingPathComponent(variantVideoUrlObj.lastPathComponent)
                     if FileManager.default.fileExists(atPath: localTmp.path) {
+                        browser.willPlayVideo()
                         let playerViewController = SKAVPlayerViewController()
                         playerViewController.player = AVPlayer(url: localTmp)
                         browser.addChild(playerViewController)
