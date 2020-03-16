@@ -112,7 +112,11 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.handleSKPhotoLoadingDidEndNotification(_:)), name: NSNotification.Name(rawValue: SKPHOTO_LOADING_DID_END_NOTIFICATION), object: nil)
         
-        session = URLSession(configuration: URLSessionConfiguration.background(withIdentifier: "SKPhotoBrowser"), delegate: self, delegateQueue: OperationQueue())
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        
+        session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue())
     }
     
     // MARK: - override
@@ -328,7 +332,7 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
         guard let urlObject = URL(string: url) else {
             return
         }
-        videoDownloadProgress[url] = 0
+        videoDownloadProgress[urlObject.lastPathComponent] = 0
         session?.downloadTask(with: urlObject).resume()
     }
     
@@ -347,10 +351,14 @@ extension SKPhotoBrowser: URLSessionDownloadDelegate {
     
     public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         let percentDownloaded = Int(100 * CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite) )
-        if let url = downloadTask.originalRequest?.url?.absoluteString {
+        if let url = downloadTask.originalRequest?.url?.lastPathComponent {
             DispatchQueue.main.async { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.videoDownloadProgress[url] = percentDownloaded
+                if #available(iOS 11.0, *) {
+                    strongSelf.videoDownloadProgress[url] = percentDownloaded
+                } else {
+                    strongSelf.videoDownloadProgress[url] = percentDownloaded
+                }
                 strongSelf.pagingScrollView.reloadVideo()
             }
         }
@@ -359,7 +367,7 @@ extension SKPhotoBrowser: URLSessionDownloadDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         DispatchQueue.main.async { [weak self] in
             guard let strongSelf = self else { return }
-            strongSelf.videoDownloadProgress.removeValue(forKey: task.originalRequest?.url?.absoluteString ?? "")
+            strongSelf.videoDownloadProgress.removeValue(forKey: task.originalRequest?.url?.lastPathComponent ?? "")
             strongSelf.pagingScrollView.reloadVideo()
         }
     }
@@ -382,6 +390,7 @@ extension SKPhotoBrowser: URLSessionDownloadDelegate {
         }
         DispatchQueue.main.async { [weak self] in
             guard let strongSelf = self else { return }
+            strongSelf.videoDownloadProgress.removeValue(forKey: url.lastPathComponent ?? "")
             strongSelf.pagingScrollView.reloadVideo()
         }
     }

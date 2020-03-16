@@ -496,7 +496,7 @@ open class SKZoomingScrollView: UIScrollView {
             let localTmp = cacheDirectory.appendingPathComponent(variantVideoUrlObj.lastPathComponent)
             if FileManager.default.fileExists(atPath: localTmp.path) {
                 detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
-            } else if let progress = photoBrowser?.videoDownloadProgress[videoUrl] {
+            } else if let progress = photoBrowser?.videoDownloadProgress[variantVideoUrlObj.lastPathComponent] {
                 detectingImageView.addDownloadProgress(progress)
             } else {
                 detectingImageView.addIconOverlayer(UIImage(named: "post_view_download_marker"))
@@ -806,7 +806,7 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
                         browser.addChild(playerViewController)
                         browser.view.addSubview(playerViewController.view)
                         playerViewController.didMove(toParent: browser)
-                    } else if browser.videoDownloadProgress[variantVideoUrl] == nil {
+                    } else if browser.videoDownloadProgress[variantVideoUrlObj.lastPathComponent] == nil {
                         browser.startVideoDownload(photo.variantVideoUrl ?? "")
                         setupImageView()
                     }

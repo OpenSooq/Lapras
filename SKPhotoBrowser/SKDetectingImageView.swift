@@ -17,6 +17,9 @@ class SKDetectingImageView: UIImageView {
     
     weak var delegate: SKDetectingImageViewDelegate?
     
+    var imageView: UIImageView?
+    var labelView: UILabel?
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setup()
@@ -27,29 +30,54 @@ class SKDetectingImageView: UIImageView {
         setup()
     }
     
-    func addIconOverlayer(_ image: UIImage?) {
-        subviews.forEach({ $0.removeFromSuperview() })
+    func setup() {
+        
+        isUserInteractionEnabled = true
+        
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        addGestureRecognizer(doubleTap)
+        
+        let singleTap = UITapGestureRecognizer(target: self, action: #selector(handleSingleTap(_:)))
+        singleTap.require(toFail: doubleTap)
+        addGestureRecognizer(singleTap)
+        
         let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 150, height: 150))
+        imageView.isHidden = true
         imageView.contentMode = .scaleAspectFit
         imageView.image = image
         addSubview(imageView)
-    }
-    
-    func addDownloadProgress(_ progress: Int) {
-        subviews.forEach({ $0.removeFromSuperview() })
+        self.imageView = imageView
+        
         let label = UILabel(frame: .zero)
-        label.text = "\(progress)%"
+        label.isHidden = true
         label.font = UIFont.boldSystemFont(ofSize: 70)
         label.textColor = .white
         label.layer.shadowColor = UIColor.black.cgColor
         label.layer.shadowRadius = 3
         label.layer.shadowOffset = .zero
         label.layer.shadowOpacity = 0.5
-        label.layer.shouldRasterize = true
         label.layer.masksToBounds = false
         addSubview(label)
+        self.labelView = label
     }
     
+    func addIconOverlayer(_ image: UIImage?) {
+        labelView?.isHidden = true
+        imageView?.isHidden = false
+        imageView?.image = image
+        setNeedsLayout()
+        setNeedsDisplay()
+    }
+    
+    func addDownloadProgress(_ progress: Int) {
+        labelView?.isHidden = false
+        imageView?.isHidden = true
+        labelView?.text = "\(progress)%"
+        setNeedsLayout()
+        setNeedsDisplay()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         for item in subviews {
@@ -69,19 +97,5 @@ class SKDetectingImageView: UIImageView {
     
     @objc func handleSingleTap(_ recognizer: UITapGestureRecognizer) {
         delegate?.handleImageViewSingleTap(recognizer.location(in: self))
-    }
-}
-
-private extension SKDetectingImageView {
-    func setup() {
-        isUserInteractionEnabled = true
-        
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        addGestureRecognizer(doubleTap)
-        
-        let singleTap = UITapGestureRecognizer(target: self, action: #selector(handleSingleTap(_:)))
-        singleTap.require(toFail: doubleTap)
-        addGestureRecognizer(singleTap)
     }
 }
