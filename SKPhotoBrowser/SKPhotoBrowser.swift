@@ -14,7 +14,7 @@ public let SKPHOTO_LOADING_DID_END_WITH_ERROR_NOTIFICATION = "photoLoadingDidEnd
 // MARK: - SKPhotoBrowser
 open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelegate {
     
-    let pageIndexTagOffset: Int = 1000
+    open let pageIndexTagOffset: Int = 1000
     
     fileprivate var closeButton: SKCloseButton!
     fileprivate var deleteButton: SKDeleteButton!

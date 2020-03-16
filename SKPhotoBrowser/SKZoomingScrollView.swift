@@ -766,7 +766,11 @@ class SKAVPlayerViewController: AVPlayerViewController{
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         let button = UIButton(type: .custom)
-        button.frame = CGRect(x: 0, y: 0, width: 65, height: 65)
+        if UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft {
+            button.frame = CGRect(x: self.view.bounds.width-65, y: 0, width: 65, height: 65)
+        } else {
+            button.frame = CGRect(x: 0, y: 0, width: 65, height: 65)
+        }
         button.backgroundColor = .clear
         button.addTarget(self, action: #selector(customClick(_:)), for: .touchUpInside)
         self.view.addSubview(button)
