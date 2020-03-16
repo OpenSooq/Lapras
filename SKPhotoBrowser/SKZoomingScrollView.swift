@@ -770,6 +770,7 @@ class SKAVPlayerViewController: AVPlayerViewController{
         button.backgroundColor = .clear
         button.addTarget(self, action: #selector(customClick(_:)), for: .touchUpInside)
         self.view.addSubview(button)
+        self.player?.play()
     }
     
     @objc func customClick(_ sender: Any) {
