@@ -802,8 +802,16 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
                     if FileManager.default.fileExists(atPath: localTmp.path) {
                         browser.willPlayVideo()
                         let playerViewController = SKAVPlayerViewController()
-                        playerViewController.player = AVPlayer(url: localTmp)
+                        let player = AVPlayer(url: localTmp)
+                        if #available(iOS 10.0, *) {
+                            player.automaticallyWaitsToMinimizeStalling = true
+                            player.currentItem?.preferredForwardBufferDuration = TimeInterval(15)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                        playerViewController.player = player
                         browser.addChild(playerViewController)
+                        playerViewController.view.frame = browser.view.bounds
                         browser.view.addSubview(playerViewController.view)
                         playerViewController.didMove(toParent: browser)
                     } else if browser.videoDownloadProgress[variantVideoUrlObj.lastPathComponent] == nil {
