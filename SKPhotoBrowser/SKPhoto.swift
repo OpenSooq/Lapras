@@ -17,6 +17,7 @@ import UIKit
     var isVideo: Bool { get set }
     var variantPhoto: SKPhotoProtocol? { get set }
     var variantVideoUrl: String? { get set }
+    var youtubeVideoUrl: String? { get set }
     func loadUnderlyingImageAndNotify()
     func checkCache()
 }
@@ -35,6 +36,7 @@ open class SKPhoto: NSObject, SKPhotoProtocol {
     open var isVideo: Bool = false
     open var variantPhoto: SKPhotoProtocol?
     open var variantVideoUrl: String?
+    open var youtubeVideoUrl: String?
     
     override init() {
         super.init()

@@ -13,6 +13,7 @@ import ImageIO
 import AVFoundation
 import MediaPlayer
 import AVKit
+import WebKit
 
 public protocol CTPanoramaCompass {
     func updateUI(rotationAngle: CGFloat, fieldOfViewAngle: CGFloat)
@@ -489,6 +490,10 @@ open class SKZoomingScrollView: UIScrollView {
     }
     
     func setupVideoImageView(_ detectingImageView: SKDetectingImageView) {
+        if let youtubeUrl = photo.youtubeVideoUrl {
+            detectingImageView.addIconOverlayer(UIImage(named: "post_view_video_marker"))
+            return
+        }
         if let videoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: videoUrl)  {
             guard let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
                return
@@ -757,7 +762,7 @@ extension SKZoomingScrollView: SKDetectingViewDelegate {
 
 // MARK: - SKDetectingImageViewDelegate
 
-class SKAVPlayerViewController: AVPlayerViewController{
+private class SKAVPlayerViewController: AVPlayerViewController {
     
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         super.dismiss(animated: flag, completion: completion)
@@ -785,6 +790,82 @@ class SKAVPlayerViewController: AVPlayerViewController{
     }
 }
 
+private class YoutubePlayerViewController: UIViewController {
+    
+    var webView: WKWebView?
+    var youtubeLink: String?
+    
+    override func loadView() {
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        let wkWebView = WKWebView(frame: .zero, configuration: configuration)
+        wkWebView.isOpaque = false
+        wkWebView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        if let linkFound = self.youtubeLink, var urlComponents = URLComponents(string: linkFound) {
+            if let videoId = urlComponents.queryItems?.filter({ $0.name == "v" }).first?.value {
+                if let embedUrl = URL(string: "https://www.youtube.com/embed/\(videoId)?playsinline=1") {
+                    wkWebView.load(URLRequest(url: embedUrl))
+                }
+            } else {
+                if let url = urlComponents.url {
+                    wkWebView.load(URLRequest(url: url))
+                }
+            }
+        }
+        self.view = wkWebView
+    }
+    
+    @objc func didClickClose(_ sender: Any) {
+        if let root = self.parent?.parent /* navigation */ {
+            (root as? SKPhotoBrowser)?.didCloseVideoPlayer()
+            self.parent?.willMove(toParent: nil)
+            self.parent?.view.removeFromSuperview()
+            self.parent?.removeFromParent()
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupNavigationBar()
+    }
+    
+    private func setupNavigationBar() {
+        navigationController?.navigationBar.tintColor = .white
+        navigationController?.navigationBar.barTintColor = .black
+        navigationController?.navigationBar.backgroundColor = .black
+        navigationController?.navigationBar.shadowImage = UIImage()
+        navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
+        if #available(iOS 13.0, *) {
+            let navbarAppearance = UINavigationBarAppearance()
+            navbarAppearance.configureWithOpaqueBackground()
+            navbarAppearance.backgroundColor = .black
+            navbarAppearance.shadowImage = nil
+            navbarAppearance.shadowColor = nil
+            var attrs = [NSAttributedString.Key: Any]()
+            attrs[NSAttributedString.Key.foregroundColor] = UIColor.white
+            navbarAppearance.titleTextAttributes = attrs
+            navigationController?.navigationBar.standardAppearance = navbarAppearance
+            navigationController?.navigationBar.scrollEdgeAppearance = navbarAppearance
+            navigationController?.navigationBar.compactAppearance = navbarAppearance
+        }
+        let bundle = Bundle(for: SKPhotoBrowser.self)
+        let image = UIImage(named: "SKPhotoBrowser.bundle/images/btn_common_close_wh2", in: bundle, compatibleWith: nil) ?? UIImage()
+        let dismissBtn = UIButton()
+        dismissBtn.frame = CGRect(x: 0, y: 0, width: 15, height: 15)
+        dismissBtn.setImage(image, for: .normal)
+        dismissBtn.addTarget(self, action: #selector(didClickClose), for: .touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: dismissBtn)
+        if #available(iOS 9.0, *) {
+            navigationItem.leftBarButtonItem?.customView?.translatesAutoresizingMaskIntoConstraints = false
+            navigationItem.leftBarButtonItem?.customView?.widthAnchor.constraint(equalToConstant: 15).isActive = true
+            navigationItem.leftBarButtonItem?.customView?.heightAnchor.constraint(equalToConstant: 15).isActive = true
+        } else {
+            // Fallback on earlier versions
+        }
+        navigationItem.title = youtubeLink
+    }
+}
+
 extension SKZoomingScrollView: SKDetectingImageViewDelegate {
     func handleImageViewSingleTap(_ touchPoint: CGPoint) {
         guard let browser = photoBrowser else {
@@ -794,6 +875,17 @@ extension SKZoomingScrollView: SKDetectingImageViewDelegate {
         if currentPageIndex >= 0, currentPageIndex < browser.photos.count {
             let photo = browser.photos[currentPageIndex]
             if photo.isVideo {
+                if let youtubeUrl = photo.youtubeVideoUrl {
+                    browser.willPlayVideo()
+                    let youtubePlayerController = YoutubePlayerViewController()
+                    youtubePlayerController.youtubeLink = youtubeUrl
+                    let navigationController = UINavigationController(rootViewController: youtubePlayerController)
+                    browser.addChild(navigationController)
+                    navigationController.view.frame = browser.view.bounds
+                    browser.view.addSubview(navigationController.view)
+                    navigationController.didMove(toParent: browser)
+                    return
+                }
                 if let variantVideoUrl = photo.variantVideoUrl, let variantVideoUrlObj = URL(string: variantVideoUrl) {
                     guard let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
                         return

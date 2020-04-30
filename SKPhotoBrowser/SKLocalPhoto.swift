@@ -15,6 +15,7 @@ open class SKLocalPhoto: NSObject, SKPhotoProtocol {
     open var isVideo: Bool = false
     open var variantPhoto: SKPhotoProtocol?
     open var variantVideoUrl: String?
+    open var youtubeVideoUrl: String?
     open var underlyingImage: UIImage!
     open var photoURL: String!
     open var contentMode: UIView.ContentMode = .scaleToFill
