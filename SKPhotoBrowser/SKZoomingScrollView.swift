@@ -790,9 +790,9 @@ private class SKAVPlayerViewController: AVPlayerViewController {
     }
 }
 
-private class YoutubePlayerViewController: UIViewController {
+private class YoutubePlayerViewController: UIViewController, WKNavigationDelegate {
     
-    var webView: WKWebView?
+    var activityIndicator: UIActivityIndicatorView?
     var youtubeLink: String?
     
     override func loadView() {
@@ -800,7 +800,7 @@ private class YoutubePlayerViewController: UIViewController {
         configuration.allowsInlineMediaPlayback = true
         let wkWebView = WKWebView(frame: .zero, configuration: configuration)
         wkWebView.isOpaque = false
-        wkWebView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        wkWebView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         if let linkFound = self.youtubeLink, var urlComponents = URLComponents(string: linkFound) {
             if let videoId = urlComponents.queryItems?.filter({ $0.name == "v" }).first?.value {
                 if let embedUrl = URL(string: "https://www.youtube.com/embed/\(videoId)?playsinline=1") {
@@ -812,7 +812,25 @@ private class YoutubePlayerViewController: UIViewController {
                 }
             }
         }
+        wkWebView.navigationDelegate = self
+        activityIndicator = UIActivityIndicatorView(style: .whiteLarge)
+        activityIndicator?.sizeToFit()
+        activityIndicator?.isHidden = false
+        activityIndicator?.startAnimating()
+        wkWebView.addSubview(activityIndicator!)
+        if #available(iOS 9.0, *) {
+            activityIndicator?.translatesAutoresizingMaskIntoConstraints = false
+            activityIndicator?.centerXAnchor.constraint(equalTo: wkWebView.centerXAnchor).isActive = true
+            activityIndicator?.centerYAnchor.constraint(equalTo: wkWebView.centerYAnchor).isActive = true
+        } else {
+            // Fallback on earlier versions
+        }
         self.view = wkWebView
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        activityIndicator?.stopAnimating()
+        activityIndicator?.isHidden = true
     }
     
     @objc func didClickClose(_ sender: Any) {
