@@ -91,6 +91,11 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
         }
     }
     
+    open func invalidateAndCancel() {
+        session?.invalidateAndCancel()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     deinit {
         session?.invalidateAndCancel()
         NotificationCenter.default.removeObserver(self)
