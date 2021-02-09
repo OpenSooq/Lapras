@@ -182,18 +182,20 @@ open class SKPhotoBrowser: UIViewController, UIViewControllerTransitioningDelega
             return
         }
         
-        DispatchQueue.main.async(execute: {
-            guard let page = self.pagingScrollView.pageDisplayingAtPhoto(photo), let photo = page.photo else {
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else {
                 return
             }
-            
+            guard let page = strongSelf.pagingScrollView.pageDisplayingAtPhoto(photo), let photo = page.photo else {
+                return
+            }
             if photo.underlyingImage != nil {
                 page.displayImage(complete: true)
-                self.loadAdjacentPhotosIfNecessary(photo)
+                strongSelf.loadAdjacentPhotosIfNecessary(photo)
             } else {
                 page.displayImageFailure()
             }
-        })
+        }
     }
     
     open func loadAdjacentPhotosIfNecessary(_ photo: SKPhotoProtocol) {
